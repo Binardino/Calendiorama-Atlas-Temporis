@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendiorama Atlas Temporis — Prototype</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    header {
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      height: 38px;
+    }
+
+    header h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #c8a96e;
+      letter-spacing: 0.05em;
+    }
+
+    .badge {
+      background: #0f3460;
+      color: #c8a96e;
+      font-size: 0.6rem;
+      padding: 1px 7px;
+      border-radius: 10px;
+      border: 1px solid #c8a96e44;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      margin-left: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.65rem;
+      color: #8888aa;
+    }
+
+    .legend-swatch {
+      width: 12px; height: 3px;
+      border-radius: 2px;
+    }
+
+    header .subtitle {
+      font-size: 0.7rem;
+      color: #555577;
+      margin-left: auto;
+    }
+
+    /* ── Main layout ─────────────────────────────────────────────── */
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Sidebar (left) ──────────────────────────────────────────── */
+    .sidebar {
+      width: 230px;
+      background: #16213e;
+      border-right: 1px solid #0f3460;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section {
+      border-bottom: 1px solid #0f346028;
+      padding: 10px 12px;
+    }
+
+    .sidebar-section h3 {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #c8a96e;
+      margin-bottom: 8px;
+    }
+
+    .region-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e8d5a3;
+      margin-bottom: 3px;
+    }
+
+    .region-period {
+      font-size: 0.62rem;
+      color: #c8a96e;
+      margin-bottom: 5px;
+    }
+
+    .region-info {
+      font-size: 0.68rem;
+      color: #8899aa;
+      line-height: 1.5;
+    }
+
+    .cal-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 6px;
+      border-radius: 3px;
+      border-bottom: 1px solid #ffffff06;
+      transition: background 0.1s;
+      cursor: default;
+    }
+
+    .cal-entry:hover { background: #0f346033; }
+
+    .cal-entry.active {
+      background: #0f346055;
+      border-left: 2px solid #c8a96e;
+    }
+
+    .cal-entry .cn { font-size: 0.68rem; color: #8899bb; }
+    .cal-entry .cd { font-size: 0.7rem; color: #e0ddd0; font-variant-numeric: tabular-nums; }
+
+    /* ── Map ─────────────────────────────────────────────────────── */
+    #map {
+      flex: 1;
+      background: #0d1b2a;
+    }
+
+    /* ── Right panel ─────────────────────────────────────────────── */
+    .right-panel {
+      width: 190px;
+      background: #16213e;
+      border-left: 1px solid #0f3460;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .right-panel .sidebar-section h3 { color: #88aacc; }
+
+    .era-item {
+      padding: 4px 6px;
+      font-size: 0.68rem;
+      color: #8899aa;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s;
+    }
+
+    .era-item:hover { background: #0f346033; }
+
+    .era-item.current {
+      background: #0f3460;
+      color: #e8d5a3;
+    }
+
+    .era-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Calendar labels on map ──────────────────────────────────── */
+    .cal-pill {
+      background: rgba(13, 20, 44, 0.82);
+      border-radius: 20px;
+      padding: 3px 10px 4px;
+      text-align: center;
+      white-space: nowrap;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+      transition: opacity 0.3s;
+    }
+
+    .cal-pill .cp-sys {
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.75;
+      display: block;
+    }
+
+    .cal-pill .cp-date {
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: block;
+      margin-top: 1px;
+    }
+
+    /* ── Leaflet overrides ───────────────────────────────────────── */
+    .leaflet-popup-content-wrapper {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      color: #e0e0e0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .leaflet-popup-tip { background: #16213e; }
+    .leaflet-popup-content { margin: 10px 14px; font-size: 0.75rem; line-height: 1.7; }
+
+    .popup-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e8d5a3;
+      margin-bottom: 5px;
+    }
+
+    .leaflet-control-zoom a {
+      background: #16213e !important;
+      color: #c8a96e !important;
+      border-color: #0f3460 !important;
+    }
+
+    .leaflet-control-zoom a:hover { background: #0f3460 !important; }
+
+    /* ── Timeline ────────────────────────────────────────────────── */
+    .timeline-wrapper {
+      flex-shrink: 0;
+      height: 175px;
+      background: #13172a;
+      border-top: 2px solid #252a45;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top row: year + era label + step buttons */
+    .tl-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 20px 4px;
+      flex-shrink: 0;
+      height: 46px;
+    }
+
+    .tl-year {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #c8a96e;
+      font-variant-numeric: tabular-nums;
+      min-width: 100px;
+      line-height: 1;
+    }
+
+    .tl-era-label {
+      font-size: 0.7rem;
+      color: #5566aa;
+      flex: 1;
+    }
+
+    .btn-step {
+      background: transparent;
+      border: 1px solid #2a3060;
+      color: #8899cc;
+      padding: 2px 9px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      transition: all 0.12s;
+    }
+
+    .btn-step:hover {
+      border-color: #c8a96e88;
+      color: #c8a96e;
+      background: #0f346033;
+    }
+
+    /* Era bands strip */
+    .tl-bands {
+      height: 14px;
+      display: flex;
+      margin: 0 20px;
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Track area: tick marks + slider */
+    .tl-track-area {
+      flex: 1;
+      position: relative;
+      margin: 0 20px;
+    }
+
+    /* Tick marks drawn by JS */
+    .tl-ticks {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* The actual range input — covers the full track area, transparent */
+    #timeline-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
+      z-index: 10;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    /* Cursor line (the vertical gold bar) */
+    .tl-cursor {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: #c8a96e;
+      pointer-events: none;
+      z-index: 5;
+      transform: translateX(-50%);
+      box-shadow: 0 0 8px #c8a96e88;
+    }
+
+    .tl-cursor-year {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #c8a96e;
+      color: #13172a;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Year label ticks */
+    .tick-mark {
+      position: absolute;
+      top: 8px;
+      width: 1px;
+      background: #2a3060;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .tick-label {
+      position: absolute;
+      bottom: 4px;
+      transform: translateX(-50%);
+      font-size: 0.58rem;
+      color: #3a4070;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .tick-mark.major { background: #3a4580; }
+    .tick-label.major { color: #5566aa; }
+
+    /* End caps */
+    .tl-end-cap {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: #3a4580;
+      pointer-events: none;
+    }
+
+    .tl-end-cap.left  { left: 0; }
+    .tl-end-cap.right { right: 0; }
+
+    .tl-end-label {
+      position: absolute;
+      bottom: 4px;
+      font-size: 0.6rem;
+      color: #4455aa;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .tl-end-label.left  { left: 0; }
+    .tl-end-label.right { right: 0; transform: translateX(-100%); }
+
+    /* ── Loading ──────────────────────────────────────────────────── */
+    #loading {
+      position: fixed; inset: 0;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s;
+    }
+
+    #loading h2 { color: #c8a96e; margin-bottom: 6px; }
+    #loading p  { color: #8888aa; font-size: 0.8rem; }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #0f3460;
+      border-top-color: #c8a96e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 14px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>Calendiorama Atlas Temporis</h2>
+  <p>Chargement de la carte…</p>
+</div>
+
+<header>
+  <h1>Calendiorama Atlas Temporis</h1>
+  <span class="badge">prototype</span>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#c8a96e;"></div>
+      Frontières historiques
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#4488cc;"></div>
+      Calendriers locaux
+    </div>
+  </div>
+  <span class="subtitle">Phase 0 — données simulées</span>
+</header>
+
+<div class="main">
+
+  <!-- Sidebar gauche -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h3>Région sélectionnée</h3>
+      <div class="region-name" id="region-name">—</div>
+      <div class="region-period" id="region-period"></div>
+      <div class="region-info" id="region-info">Cliquez sur une région de la carte.</div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Calendriers de la région</h3>
+      <div id="calendar-list"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Date grégorienne</h3>
+      <div style="color:#e8d5a3; font-size:0.82rem;" id="greg-date">1 jan. 1683</div>
+      <div style="color:#555577; font-size:0.62rem; margin-top:2px;">Référence universelle</div>
+    </div>
+  </aside>
+
+  <div id="map"></div>
+
+  <!-- Panel droit -->
+  <aside class="right-panel">
+    <div class="sidebar-section">
+      <h3>Époques</h3>
+      <div id="era-list"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Couches</h3>
+      <label class="era-item" style="cursor:pointer;">
+        <input type="checkbox" checked id="layer-borders" style="accent-color:#c8a96e;" />
+        <span>Frontières</span>
+      </label>
+      <label class="era-item" style="cursor:pointer;">
+        <input type="checkbox" checked id="layer-cal-labels" style="accent-color:#c8a96e;" />
+        <span>Dates sur carte</span>
+      </label>
+      <label class="era-item" style="cursor:pointer;">
+        <input type="checkbox" checked id="layer-names" style="accent-color:#c8a96e;" />
+        <span>Noms des régions</span>
+      </label>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Sources données</h3>
+      <div class="era-item current">
+        <div class="era-dot" style="background:#c8a96e;"></div>
+        aourednik/historical-basemaps
+      </div>
+      <div class="era-item">
+        <div class="era-dot" style="background:#4488cc;"></div>
+        CShapes 2.0 (1886+)
+      </div>
+      <div class="era-item">
+        <div class="era-dot" style="background:#44aa88;"></div>
+        Natural Earth
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ── Timeline ──────────────────────────────────────────────── -->
+<div class="timeline-wrapper">
+
+  <!-- Top row -->
+  <div class="tl-top">
+    <div class="tl-year" id="tl-year">1683</div>
+    <div class="tl-era-label" id="tl-era">Époque moderne</div>
+    <button class="btn-step" onclick="stepYear(-500)">−500</button>
+    <button class="btn-step" onclick="stepYear(-100)">−100</button>
+    <button class="btn-step" onclick="stepYear(-10)">−10</button>
+    <button class="btn-step" onclick="stepYear(-1)">−1</button>
+    <button class="btn-step" onclick="stepYear(1)">+1</button>
+    <button class="btn-step" onclick="stepYear(10)">+10</button>
+    <button class="btn-step" onclick="stepYear(100)">+100</button>
+    <button class="btn-step" onclick="stepYear(500)">+500</button>
+  </div>
+
+  <!-- Era color bands -->
+  <div class="tl-bands" id="tl-bands"></div>
+
+  <!-- Ruler + cursor -->
+  <div class="tl-track-area" id="tl-track">
+    <canvas class="tl-ticks" id="tl-canvas"></canvas>
+    <div class="tl-cursor" id="tl-cursor">
+      <div class="tl-cursor-year" id="tl-cursor-year">1683</div>
+    </div>
+    <div class="tl-end-cap left"></div>
+    <div class="tl-end-cap right"></div>
+    <div class="tl-end-label left">3000 AEC</div>
+    <div class="tl-end-label right">2023 CE</div>
+    <input type="range" id="timeline-slider" min="-3000" max="2023" value="1683"
+           oninput="onSliderInput(this.value)" />
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  CONSTANTS & DATA
+// ═══════════════════════════════════════════════════════════════
+
+const MIN_YEAR = -3000;
+const MAX_YEAR = 2023;
+
+const ERAS = [
+  { range: [-3000, -1200], label: "Âge du Bronze",             color: "#5c3a0a" },
+  { range: [-1200,  -500], label: "Fer / Antiquité naissante", color: "#3a3020" },
+  { range: [ -500,   500], label: "Antiquité classique",       color: "#1a3040" },
+  { range: [  500,  1000], label: "Haut Moyen Âge",            color: "#1a2e1a" },
+  { range: [ 1000,  1500], label: "Bas Moyen Âge",             color: "#2a1a3a" },
+  { range: [ 1500,  1800], label: "Époque moderne",            color: "#1a2040" },
+  { range: [ 1800,  1945], label: "Époque contemporaine",      color: "#10203a" },
+  { range: [ 1945,  2023], label: "Après-guerre / Actuel",     color: "#0e1a30" },
+];
+
+// Political regions (simplified polygons, prototype)
+const REGIONS = [
+  {
+    name: "Empire Ottoman",
+    period: "1299 – 1922",
+    info: "Couvre l'Anatolie, les Balkans, le Moyen-Orient et l'Afrique du Nord. À son apogée, l'un des États les plus puissants au monde.",
+    color: "#c8a96e",
+    calSystems: ["hijri", "gregorian"],
+    coords: [[[16,38],[22,44],[30,46],[38,40],[42,38],[40,30],[36,24],[26,24],[18,28],[14,32],[16,38]]],
+  },
+  {
+    name: "Saint-Empire Romain Germanique",
+    period: "962 – 1806",
+    info: "Confédération de plusieurs centaines d'États en Europe centrale. Structure politique très décentralisée.",
+    color: "#8899cc",
+    calSystems: ["gregorian"],
+    coords: [[[8,48],[14,54],[18,52],[20,48],[16,44],[10,44],[6,46],[8,48]]],
+  },
+  {
+    name: "Empire Perse Safavide",
+    period: "1501 – 1736",
+    info: "Le chiisme comme religion d'État. Principal rival de l'Empire ottoman à l'Est.",
+    color: "#cc7744",
+    calSystems: ["persian", "hijri"],
+    coords: [[[44,40],[56,40],[62,34],[58,26],[50,24],[44,30],[42,36],[44,40]]],
+  },
+  {
+    name: "Empire Moghol",
+    period: "1526 – 1857",
+    info: "Domine le sous-continent indien. Grande période de synthèse culturelle islamo-hindoue.",
+    color: "#44aa88",
+    calSystems: ["hijri"],
+    coords: [[[62,36],[74,36],[80,28],[78,18],[72,10],[66,14],[62,22],[60,30],[62,36]]],
+  },
+  {
+    name: "France (Royaume)",
+    period: "843 – 1792",
+    info: "Monarchie absolue sous Louis XIV — le Roi-Soleil. Centre culturel et militaire de l'Europe occidentale.",
+    color: "#5566bb",
+    calSystems: ["gregorian"],
+    coords: [[[-4,44],[2,50],[8,48],[8,44],[4,42],[-2,42],[-4,44]]],
+  },
+  {
+    name: "Empire Qing",
+    period: "1644 – 1912",
+    info: "Dernière dynastie impériale de Chine. Expansion maximale au XVIIIe siècle.",
+    color: "#aa5555",
+    calSystems: ["chinese"],
+    coords: [[[18,100],[18,122],[25,122],[36,124],[44,132],[48,136],[52,128],[52,90],[38,78],[28,98],[18,100]]],
+  },
+  {
+    name: "Japon (Tokugawa)",
+    period: "1603 – 1868",
+    info: "Période Edo : paix intérieure, isolationnisme (sakoku), développement culturel florissant.",
+    color: "#dd6666",
+    calSystems: ["japanese"],
+    coords: [[[31,130],[34,131],[37,141],[44,145],[45,142],[41,140],[35,136],[34,130],[31,130]]],
+  },
+  {
+    name: "Éthiopie (Empire Salomonide)",
+    period: "1270 – 1974",
+    info: "L'un des plus vieux États chrétiens du monde, résistant aux tentatives de colonisation.",
+    color: "#33aa66",
+    calSystems: ["ethiopian"],
+    coords: [[[4,34],[4,42],[12,48],[15,42],[15,36],[10,33],[4,34]]],
+  },
+];
+
+// Calendar zone markers — positioned independently of political borders
+// These labels float on the map showing which calendar is used where
+const CALENDAR_ZONES = [
+  {
+    id: "gregorian",
+    name: "Grégorien",
+    color: "#7788cc",
+    position: [48.0, 2.0],    // Paris
+    compute: computeGregorian,
+    minYear: 1582,
+  },
+  {
+    id: "julian",
+    name: "Julien",
+    color: "#9988bb",
+    position: [41.9, 12.5],   // Rome
+    compute: computeJulian,
+    minYear: -45,
+  },
+  {
+    id: "hijri",
+    name: "Hijri",
+    color: "#c8a96e",
+    position: [24.0, 45.0],   // Arabie centrale
+    compute: computeHijri,
+    minYear: 622,
+  },
+  {
+    id: "hebrew",
+    name: "Hébraïque",
+    color: "#6688ee",
+    position: [31.8, 35.2],   // Jérusalem
+    compute: computeHebrew,
+    minYear: -3760,
+  },
+  {
+    id: "persian",
+    name: "Persan (Jalali)",
+    color: "#dd8844",
+    position: [35.7, 51.5],   // Téhéran
+    compute: computePersian,
+    minYear: 622,
+  },
+  {
+    id: "japanese",
+    name: "Japonais",
+    color: "#dd5555",
+    position: [36.2, 138.5],  // Japon central
+    compute: computeJapanese,
+    minYear: -660,
+  },
+  {
+    id: "coptic",
+    name: "Copte",
+    color: "#bb9933",
+    position: [30.1, 31.2],   // Le Caire
+    compute: computeCoptic,
+    minYear: 284,
+  },
+  {
+    id: "ethiopian",
+    name: "Éthiopien",
+    color: "#33aa66",
+    position: [9.0, 38.8],    // Addis-Abeba
+    compute: computeEthiopian,
+    minYear: 7,
+  },
+  {
+    id: "chinese",
+    name: "Chinois (cycle)",
+    color: "#cc4444",
+    position: [35.5, 114.0],  // Chine centrale
+    compute: computeChinese,
+    minYear: -2600,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  CALENDAR CONVERSION (approximations)
+// ═══════════════════════════════════════════════════════════════
+
+function yearStr(y) {
+  return y > 0 ? `${y}` : `${Math.abs(y)} AEC`;
+}
+
+function computeGregorian(y) {
+  return { year: `${yearStr(y)} CE`, note: "" };
+}
+
+function computeJulian(y) {
+  if (y < -45) return null;
+  // Julian calendar: same year, offset of a few days in the date but year is same
+  return { year: `${yearStr(y)} (J)`, note: "Ancien Style" };
+}
+
+function computeHijri(y) {
+  if (y < 622) return null;
+  const h = Math.floor((y - 622) * 365.2425 / 354.367);
+  if (h <= 0) return null;
+  return { year: `${h} H`, note: "Hégire" };
+}
+
+function computeHebrew(y) {
+  const h = y + 3760;
+  if (h <= 0) return null;
+  return { year: `${h} AM`, note: "Anno Mundi" };
+}
+
+function computePersian(y) {
+  if (y < 622) return null;
+  const p = y - 621;
+  if (p <= 0) return null;
+  return { year: `${p} SH`, note: "Solaire hégirien" };
+}
+
+function computeJapanese(y) {
+  if (y < -660) return null;
+  if (y >= 2019) return { year: `Reiwa ${y - 2018}`, note: "令和" };
+  if (y >= 1989) return { year: `Heisei ${y - 1988}`, note: "平成" };
+  if (y >= 1926) return { year: `Shōwa ${y - 1925}`, note: "昭和" };
+  if (y >= 1912) return { year: `Taishō ${y - 1911}`, note: "大正" };
+  if (y >= 1868) return { year: `Meiji ${y - 1867}`, note: "明治" };
+  if (y >= 1603) return { year: `Edo ~${y}`, note: "江戸時代" };
+  if (y >= 710)  return { year: `~an ${y}`, note: "Période impériale" };
+  const k = y + 660;
+  return k > 0 ? { year: `Kōki ${k}`, note: "皇紀" } : null;
+}
+
+function computeCoptic(y) {
+  if (y < 284) return null;
+  return { year: `${y - 284} AM`, note: "Ère des Martyrs" };
+}
+
+function computeEthiopian(y) {
+  if (y < 7) return null;
+  return { year: `${y - 7} EE`, note: "Ère éthiopienne" };
+}
+
+const CHINESE_STEMS = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+const CHINESE_BRANCHES = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+const CHINESE_ANIMALS = ["Rat","Bœuf","Tigre","Lapin","Dragon","Serpent","Cheval","Chèvre","Singe","Coq","Chien","Cochon"];
+
+function computeChinese(y) {
+  if (y < -2600) return null;
+  // Cycle of 60 (Ganzhi): year 4 BCE = year 1 of cycle (approx)
+  const idx = ((y + 2696) % 60 + 60) % 60;
+  const stem = CHINESE_STEMS[idx % 10];
+  const branch = CHINESE_BRANCHES[idx % 12];
+  const animal = CHINESE_ANIMALS[idx % 12];
+  return { year: `${stem}${branch} (${animal})`, note: "Cycle sexagésimal" };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LEAFLET MAP
+// ═══════════════════════════════════════════════════════════════
+
+const leafletMap = L.map('map', { center: [30, 40], zoom: 3 });
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(leafletMap);
+
+const bordersLayer   = L.layerGroup().addTo(leafletMap);
+const calLabelsLayer = L.layerGroup().addTo(leafletMap);
+const namesLayer     = L.layerGroup().addTo(leafletMap);
+
+let selectedRegion = null;
+let currentYear = 1683;
+
+// ── Render political borders ──────────────────────────────────
+
+function renderRegions(year) {
+  bordersLayer.clearLayers();
+  namesLayer.clearLayers();
+
+  REGIONS.forEach(r => {
+    const poly = L.polygon(r.coords, {
+      color: r.color,
+      weight: 1.5,
+      fillColor: r.color,
+      fillOpacity: 0.16,
+      opacity: 0.8,
+    }).addTo(bordersLayer);
+
+    poly.on('click', () => selectRegion(r, year));
+
+    // Region name label
+    const center = poly.getBounds().getCenter();
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        color:${r.color};
+        font-size:0.64rem;
+        font-weight:700;
+        text-shadow:0 0 5px #000,0 0 10px #000;
+        white-space:nowrap;
+        pointer-events:none;
+        letter-spacing:0.03em;
+      ">${r.name}</div>`,
+      iconAnchor: [0, 0],
+    });
+    L.marker(center, { icon }).addTo(namesLayer);
+  });
+}
+
+// ── Render calendar labels on map ─────────────────────────────
+
+function renderCalLabels(year) {
+  calLabelsLayer.clearLayers();
+
+  CALENDAR_ZONES.forEach(zone => {
+    if (year < zone.minYear) return;
+
+    const result = zone.compute(year);
+    if (!result) return;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="cal-pill" style="border:1px solid ${zone.color}44;">
+               <span class="cp-sys" style="color:${zone.color};">${zone.name}</span>
+               <span class="cp-date" style="color:${zone.color};">${result.year}</span>
+             </div>`,
+      iconAnchor: [0, 0],
+    });
+
+    L.marker(zone.position, { icon }).addTo(calLabelsLayer);
+  });
+}
+
+// ── Select region ─────────────────────────────────────────────
+
+function selectRegion(r, year) {
+  selectedRegion = r;
+  document.getElementById('region-name').textContent   = r.name;
+  document.getElementById('region-period').textContent = r.period;
+  document.getElementById('region-info').textContent   = r.info;
+
+  const el = document.getElementById('calendar-list');
+  el.innerHTML = '';
+
+  r.calSystems.forEach((sysId, i) => {
+    const zone = CALENDAR_ZONES.find(z => z.id === sysId);
+    if (!zone) return;
+    const result = zone.compute(year);
+    if (!result) return;
+
+    const div = document.createElement('div');
+    div.className = 'cal-entry' + (i === 0 ? ' active' : '');
+    div.innerHTML = `
+      <span class="cn" style="border-left:2px solid ${zone.color}; padding-left:5px;">${zone.name}</span>
+      <span class="cd">${result.year}</span>
+    `;
+    el.appendChild(div);
+  });
+}
+
+// ── Layer toggles ─────────────────────────────────────────────
+
+document.getElementById('layer-borders').addEventListener('change', function() {
+  this.checked ? leafletMap.addLayer(bordersLayer) : leafletMap.removeLayer(bordersLayer);
+});
+
+document.getElementById('layer-cal-labels').addEventListener('change', function() {
+  this.checked ? leafletMap.addLayer(calLabelsLayer) : leafletMap.removeLayer(calLabelsLayer);
+});
+
+document.getElementById('layer-names').addEventListener('change', function() {
+  this.checked ? leafletMap.addLayer(namesLayer) : leafletMap.removeLayer(namesLayer);
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ERA LIST (right panel)
+// ═══════════════════════════════════════════════════════════════
+
+function renderEraList(year) {
+  const el = document.getElementById('era-list');
+  el.innerHTML = '';
+  ERAS.forEach(e => {
+    const current = year >= e.range[0] && year < e.range[1];
+    const div = document.createElement('div');
+    div.className = 'era-item' + (current ? ' current' : '');
+    div.innerHTML = `
+      <div class="era-dot" style="background:${current ? '#c8a96e' : '#2a3060'};"></div>
+      <span>${e.label}</span>
+    `;
+    div.title = `${e.range[0]} – ${e.range[1]}`;
+    div.onclick = () => {
+      const mid = Math.round((e.range[0] + e.range[1]) / 2);
+      document.getElementById('timeline-slider').value = mid;
+      onSliderInput(mid);
+    };
+    el.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TIMELINE RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function yearToPercent(y) {
+  return (y - MIN_YEAR) / (MAX_YEAR - MIN_YEAR);
+}
+
+function buildTimeline() {
+  // Era bands
+  const bandsEl = document.getElementById('tl-bands');
+  bandsEl.innerHTML = '';
+  ERAS.forEach(e => {
+    const left  = yearToPercent(e.range[0]) * 100;
+    const width = (yearToPercent(e.range[1]) - yearToPercent(e.range[0])) * 100;
+    const div = document.createElement('div');
+    div.style.cssText = `
+      position:absolute;
+      left:${left}%;
+      width:${width}%;
+      height:100%;
+      background:${e.color};
+      opacity:0.85;
+      cursor:pointer;
+    `;
+    div.title = `${e.label} (${e.range[0]} – ${e.range[1]})`;
+    div.onclick = () => {
+      const mid = Math.round((e.range[0] + e.range[1]) / 2);
+      document.getElementById('timeline-slider').value = mid;
+      onSliderInput(mid);
+    };
+    bandsEl.appendChild(div);
+  });
+
+  // Tick marks & labels (drawn on resize too)
+  drawTicks();
+}
+
+function drawTicks() {
+  const track = document.getElementById('tl-track');
+  const W = track.clientWidth;
+  const H = track.clientHeight;
+
+  // Remove old tick marks & labels
+  track.querySelectorAll('.tick-mark, .tick-label').forEach(el => el.remove());
+
+  // Generate ticks every 200 years (major) and 100 years (minor)
+  for (let y = Math.ceil(MIN_YEAR / 100) * 100; y <= MAX_YEAR; y += 100) {
+    const major = (y % 500 === 0);
+    const pct   = yearToPercent(y) * 100;
+
+    const tick = document.createElement('div');
+    tick.className = 'tick-mark' + (major ? ' major' : '');
+    tick.style.left   = pct + '%';
+    tick.style.height = major ? '70%' : '40%';
+    track.appendChild(tick);
+
+    if (major || (W > 600 && (y % 200 === 0))) {
+      const lbl = document.createElement('div');
+      lbl.className = 'tick-label' + (major ? ' major' : '');
+      lbl.style.left = pct + '%';
+      lbl.textContent = y > 0 ? y : Math.abs(y) + ' AEC';
+      track.appendChild(lbl);
+    }
+  }
+}
+
+function updateCursor(year) {
+  const pct = yearToPercent(year) * 100;
+  const cursor = document.getElementById('tl-cursor');
+  const label  = document.getElementById('tl-cursor-year');
+  cursor.style.left = pct + '%';
+  label.textContent = year > 0 ? year : Math.abs(year) + ' AEC';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN UPDATE
+// ═══════════════════════════════════════════════════════════════
+
+function onSliderInput(value) {
+  currentYear = parseInt(value);
+
+  document.getElementById('tl-year').textContent =
+    currentYear > 0 ? currentYear : Math.abs(currentYear) + ' AEC';
+
+  const era = ERAS.find(e => currentYear >= e.range[0] && currentYear < e.range[1]);
+  document.getElementById('tl-era').textContent = era ? era.label : '';
+
+  document.getElementById('greg-date').textContent =
+    `1 jan. ${currentYear > 0 ? currentYear : Math.abs(currentYear) + ' AEC'}`;
+
+  updateCursor(currentYear);
+  renderRegions(currentYear);
+  renderCalLabels(currentYear);
+  renderEraList(currentYear);
+
+  if (selectedRegion) selectRegion(selectedRegion, currentYear);
+}
+
+function stepYear(delta) {
+  const slider = document.getElementById('timeline-slider');
+  const v = Math.max(MIN_YEAR, Math.min(MAX_YEAR, parseInt(slider.value) + delta));
+  slider.value = v;
+  onSliderInput(v);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+
+buildTimeline();
+onSliderInput(1683);
+
+setTimeout(() => {
+  selectRegion(REGIONS[0], 1683);
+  drawTicks(); // redraw after layout is stable
+
+  const loading = document.getElementById('loading');
+  loading.style.opacity = '0';
+  setTimeout(() => loading.remove(), 400);
+}, 500);
+
+window.addEventListener('resize', drawTicks);
+</script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+Ready for review
+Select text to add comments on the plan
+Plan : Calendiorama-Atlas-Temporis — Carte Historique Interactive
+Contexte
+Projet web interactif en Python affichant une carte mondiale dynamique couplée à une frise chronologique. Pour toute date sélectionnée, la carte affiche :
+
+Les frontières historiques de cette époque
+La date locale dans le calendrier propre à chaque région
+Profil développeur : Python avancé, Docker connu. Flask, GeoPandas et Leaflet.js à apprendre. Mode de travail : code ensemble étape par étape, avec explications des concepts.
+
+Ce qu'il manquait dans le plan initial
+Besoin	Solution retenue
+Bibliothèques de conversion calendaire	convertdate, hijri-converter, jdatetime, pyluach
+Source de données historiques	CShapes 2.0 (1886-présent) + aourednik/historical-basemaps (–3000 à 2000)
+Rendu carte dynamique rapide	Leaflet.js direct (pas Folium : trop lent pour les mises à jour dynamiques)
+Mises à jour partielles de l'UI	HTMX pour les panneaux d'info (pas pour la carte)
+Cache des réponses GeoJSON	flask-caching (SimpleCache dev / Redis prod)
+Compression des gros GeoJSON	flask-compress (gzip)
+Serveur de production	Gunicorn derrière Nginx
+Gestion des dates négatives (avant J.-C.)	Slider entier sur les années, pas Date JS
+Index spatial pour requêtes point-dans-polygone	rtree via GeoPandas
+Stack technologique complète
+Backend Python
+# À ajouter dans pyproject.toml
+convertdate     = ">=2.4"    # Julian, Coptic, Ethiopian, Islamic tabular, Persian
+hijri-converter = ">=2.3"    # Hijri Umm al-Qura (haute précision, 1356–1500 AH)
+jdatetime       = ">=4.1"    # Calendrier persan/Jalali (API identique à datetime)
+pyluach         = ">=1.4"    # Calendrier hébreu (exact, toutes dates)
+flask-caching   = ">=2.3"    # Cache (SimpleCache ou Redis)
+flask-compress  = ">=1.14"   # Compression gzip des réponses GeoJSON
+gunicorn        = ">=22.0"   # Serveur WSGI de production
+orjson          = ">=3.9"    # Sérialisation JSON rapide (10× stdlib) pour GeoJSON
+rtree           = ">=1.2"    # Index spatial R-tree
+Frontend (fichiers statiques, zéro dépendances Python)
+Leaflet.js vendorisé dans static/vendor/leaflet/
+HTMX pour les mises à jour des panneaux latéraux (pas de JavaScript custom pour ça)
+Vanilla JS uniquement pour le slider de la frise et la gestion des couches Leaflet
+Structure du projet cible
+calendiorama-atlas-temporis/
+├── app.py                          # Factory create_app() + enregistrement blueprints
+├── config.py                       # DevelopmentConfig / ProductionConfig
+├── Dockerfile                      # Multi-stage, base GDAL-capable
+├── docker-compose.yml              # Prod : web + redis + nginx
+├── docker-compose.dev.yml          # Dev override : Flask debug, pas de Redis
+├── .env.example
+├── pyproject.toml
+│
+├── calendars/
+│   ├── base.py                     # ABC CalendarConverter + dataclass CalendarDate
+│   ├── gregorian.py
+│   ├── julian.py
+│   ├── hijri.py                    # hijri-converter + fallback convertdate
+│   ├── hebrew.py                   # pyluach
+│   ├── persian.py                  # jdatetime
+│   ├── japanese.py                 # table de lookup JSON
+│   ├── coptic.py                   # convertdate
+│   ├── ethiopian.py                # convertdate
+│   ├── dispatcher.py               # Région + date → liste de convertisseurs
+│   └── tests/
+│
+├── maps/
+│   ├── loader.py                   # Chargement GeoJSON + index temporel
+│   ├── renderer.py                 # Assemblage GeoJSON pour l'API + simplification
+│   ├── borders.py                  # Requête "frontières pour une date donnée"
+│   └── spatial_index.py
+│
+├── api/
+│   ├── borders.py                  # GET /api/borders
+│   ├── calendars.py                # GET /api/calendars
+│   └── timeline.py                 # GET /api/timeline/metadata
+│
+├── data/
+│   ├── geojson/
+│   │   ├── raw/                    # Données brutes téléchargées (gitignore)
+│   │   ├── processed/              # GeoJSON normalisés par ère
+│   │   └── index.json
+│   ├── calendars/
+│   │   ├── japanese_eras.json
+│   │   ├── gregorian_adoption.json
+│   │   └── region_calendar_map.json
+│   └── scripts/
+│       ├── download_data.py
+│       ├── process_cshapes.py
+│       ├── process_aourednik.py
+│       └── build_index.py
+│
+├── static/
+│   ├── css/
+│   ├── js/
+│   │   ├── map.js
+│   │   ├── timeline.js
+│   │   └── calendar_labels.js
+│   └── vendor/                     # Leaflet.js + HTMX (versions fixées)
+│
+└── templates/
+    ├── base.html
+    ├── index.html
+    └── components/
+        ├── timeline.html
+        ├── region_info.html
+        └── calendar_popup.html
+Phases de développement détaillées
+Phase 0 — Réparer la base et apprendre Flask (1-2 jours)
+Ce que tu vas apprendre :
+
+Comment fonctionne Flask : routes, templates Jinja2, variables de contexte
+Le pattern "Application Factory" (create_app()) : pourquoi c'est indispensable pour tester et déployer
+Les Blueprints Flask : comment organiser le code en modules
+Pourquoi ce pattern ? Flask peut fonctionner avec un simple app = Flask(__name__) global, mais c'est un anti-pattern pour les projets non-triviaux. La factory create_app() permet d'instancier l'app avec différentes configs (dev/test/prod) et d'enregistrer les blueprints proprement. Tu verras ce pattern dans tous les projets Flask sérieux.
+
+Fichiers à travailler :
+
+app.py — refactoring complet
+config.py — à créer
+templates/index.html — reconstruire de zéro
+maps/loader.py — corriger le bug de guillemets
+Étapes :
+
+Créer config.py avec classes DevelopmentConfig / ProductionConfig
+Refactoriser app.py : transformer en factory create_app(config_name) qui retourne l'app
+Corriger les 4 bugs de app.py (détaillés dans la section bugs)
+Reconstruire templates/index.html : HTML valide, Leaflet.js chargé directement (pas via Folium), div #map plein écran
+Créer templates/base.html avec le layout commun (head, scripts, body)
+Bugs à corriger dans app.py :
+
+Ligne ~22 : m.get_root().__repr_html__() → m._repr_html_()
+Ligne ~42 : if __name__ = '__main__': → if __name__ == '__main__':
+Ligne ~43 : indentation manquante sous le if
+Ligne avec def index() : pas de @app.route → supprimer ou corriger
+Variable template : annee_actuelle dans le HTML mais current_year dans Python → homogénéiser
+Concepts Flask à comprendre avant de coder :
+
+# Route simple
+@app.route('/')
+def home():
+    return render_template('index.html', variable=valeur)
+
+# Application factory
+def create_app(config_name='development'):
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+
+    # Enregistrement des blueprints
+    from api.borders import borders_bp
+    app.register_blueprint(borders_bp, url_prefix='/api')
+
+    return app
+
+# Blueprint (dans api/borders.py)
+borders_bp = Blueprint('borders', __name__)
+
+@borders_bp.route('/borders')
+def get_borders():
+    return jsonify({...})
+Milestone : flask run → http://localhost:5000/ affiche un div #map sans erreur JavaScript.
+
+Phase 1 — Carte contemporaine via API (1 semaine)
+Ce que tu vas apprendre :
+
+GeoPandas : lire un fichier GeoJSON, filtrer, accéder aux géométries
+Comment servir du GeoJSON depuis Flask
+Leaflet.js fondamentaux : initialiser une carte, ajouter une couche GeoJSON, styler les polygones
+Le pattern API REST : pourquoi séparer les données (API) du HTML (views)
+Pourquoi Leaflet.js et pas Folium ? Folium génère un HTML complet et autonome à chaque appel — on ne peut pas mettre à jour juste les frontières sans régénérer toute la page. Leaflet.js fonctionne côté navigateur : il maintient la carte en mémoire et tu peux ajouter/supprimer des couches à la volée via JavaScript. C'est indispensable pour que le slider de la frise soit réactif.
+
+Fichiers à travailler :
+
+maps/loader.py — implémenter load_geojson()
+api/ — créer le module et api/borders.py
+static/js/map.js — init Leaflet + fetch API
+pyproject.toml — ajouter flask-caching, flask-compress
+Étapes :
+
+Télécharger Natural Earth ne_110m_admin_0_countries.geojson (fond de carte contemporain, petit fichier ~500 KB)
+Implémenter maps/loader.py : fonction load_geojson(path: Path) -> gpd.GeoDataFrame
+Créer api/__init__.py et api/borders.py avec le Blueprint borders_bp
+Implémenter GET /api/borders : charge le GeoJSON via GeoPandas, le retourne via orjson (ignorer le paramètre date pour l'instant)
+Ajouter flask-caching (SimpleCache) et flask-compress dans create_app()
+Écrire static/js/map.js :
+Initialiser la carte Leaflet centrée sur (20, 0), zoom 2
+fetch('/api/borders') au chargement
+Ajouter le résultat avec L.geoJSON() en stylisant les polygones
+Concepts GeoPandas à comprendre :
+
+import geopandas as gpd
+
+# Lire un GeoJSON
+gdf = gpd.read_file('data/geojson/world.geojson')
+
+# gdf est un DataFrame avec une colonne spéciale 'geometry'
+print(gdf.columns)  # ['name', 'iso_a3', 'pop_est', ..., 'geometry']
+print(gdf.crs)      # système de coordonnées : EPSG:4326 (lat/lon standard)
+
+# Filtrer comme un DataFrame Pandas normal
+france = gdf[gdf['iso_a3'] == 'FRA']
+
+# Simplifier les géométries (réduire la taille)
+gdf_simple = gdf.copy()
+gdf_simple['geometry'] = gdf.geometry.simplify(0.01, preserve_topology=True)
+
+# Convertir en GeoJSON (string JSON)
+geojson_string = gdf_simple.to_json()
+Concepts Leaflet.js à comprendre (dans map.js) :
+
+// Initialisation de la carte
+const map = L.map('map').setView([20, 0], 2);
+
+// Fond de carte (tiles OpenStreetMap)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// Couche GeoJSON
+const bordersLayer = L.geoJSON(null, {
+    style: { color: '#ffffff', weight: 1, fillColor: '#3388ff', fillOpacity: 0.3 }
+}).addTo(map);
+
+// Charger les données depuis l'API
+fetch('/api/borders?date=2024-01-01')
+    .then(r => r.json())
+    .then(geojson => bordersLayer.addData(geojson));
+
+// Mettre à jour (lors d'un changement de date)
+function updateBorders(date) {
+    fetch(`/api/borders?date=${date}`)
+        .then(r => r.json())
+        .then(geojson => {
+            bordersLayer.clearLayers();
+            bordersLayer.addData(geojson);
+        });
+}
+Milestone : Carte mondiale contemporaine dans le navigateur avec les frontières nationales.
+
+Phase 2 — Moteur calendaire (1 semaine)
+Ce que tu vas apprendre :
+
+Classes abstraites Python (ABC, @abstractmethod) pour définir une interface
+Dataclasses Python pour des structures de données propres
+Utilisation de 4 bibliothèques de conversion calendaire
+Gestion des cas limites temporels (quand un calendrier n'était pas encore utilisé, transitions)
+Pourquoi une classe abstraite ici ? Tu vas avoir ~8 convertisseurs de calendriers qui font tous la même chose : prendre une date grégorienne et retourner une CalendarDate. L'ABC force chaque convertisseur à implémenter from_gregorian() et to_gregorian(). Le dispatcher.py peut alors traiter n'importe quel convertisseur de manière uniforme sans savoir lequel c'est.
+
+Fichiers à travailler :
+
+calendars/base.py — à créer
+calendars/gregorian.py, hijri.py, hebrew.py, persian.py, japanese.py — à créer
+calendars/dispatcher.py — à créer
+data/calendars/japanese_eras.json — à créer
+data/calendars/region_calendar_map.json — à créer
+data/calendars/gregorian_adoption.json — à créer
+api/calendars.py — à créer
+Étapes :
+
+Écrire calendars/base.py : dataclass CalendarDate + ABC CalendarConverter
+Écrire calendars/gregorian.py : implémentation pass-through (date grégorienne = date interne)
+Créer data/calendars/japanese_eras.json avec les ères Meiji→Reiwa
+Écrire les convertisseurs dans l'ordre croissant de complexité : persian.py (jdatetime) → hebrew.py (pyluach) → hijri.py (hijri-converter) → japanese.py (lookup table)
+Écrire data/calendars/gregorian_adoption.json (dates d'adoption par pays — clé ISO 3166 → date)
+Écrire data/calendars/region_calendar_map.json (mapping pays → calendriers)
+Écrire calendars/dispatcher.py
+Écrire api/calendars.py et l'enregistrer dans create_app()
+Écrire les tests unitaires avec les vecteurs de test connus
+Structure de calendars/base.py :
+
+from abc import ABC, abstractmethod
+from datetime import date
+from dataclasses import dataclass
+
+@dataclass
+class CalendarDate:
+    year: int | str      # str pour les formats "Reiwa 6"
+    month: int
+    day: int
+    calendar_name: str
+    display_label: str   # Label affiché sur la carte
+    era_name: str | None = None
+
+class CalendarConverter(ABC):
+    calendar_name: str
+
+    @abstractmethod
+    def from_gregorian(self, d: date) -> CalendarDate: ...
+
+    @abstractmethod
+    def to_gregorian(self, cd: CalendarDate) -> date: ...
+Exemples d'implémentation (à comprendre avant de coder) :
+
+# Persian : jdatetime fait le travail lourd
+import jdatetime
+from datetime import date
+
+class PersianConverter(CalendarConverter):
+    calendar_name = "persian"
+
+    def from_gregorian(self, d: date) -> CalendarDate:
+        jd = jdatetime.date.fromgregorian(date=d)
+        return CalendarDate(
+            year=jd.year, month=jd.month, day=jd.day,
+            calendar_name="persian",
+            display_label=f"{jd.day} {jd.strftime('%B')} {jd.year}"
+        )
+
+# Hebrew : pyluach
+from pyluach.dates import HebrewDate
+class HebrewConverter(CalendarConverter):
+    def from_gregorian(self, d: date) -> CalendarDate:
+        hd = HebrewDate.from_pydate(d)
+        return CalendarDate(year=hd.year, month=hd.month, day=hd.day, ...)
+Vecteurs de test à implémenter dans calendars/tests/ :
+
+# test_conversions.py — dates historiques connues
+
+# 24 octobre 1648 (Paix de Westphalie)
+assert hijri.from_gregorian(date(1648, 10, 24)).display_label == "17 Muharram 1059 AH"
+
+# 1er janvier 2024
+assert hebrew.from_gregorian(date(2024, 1, 1)).display_label == "10 Tevet 5784"
+assert persian.from_gregorian(date(2024, 1, 1)).display_label == "11 Dey 1402"
+# Japon : Reiwa 6 (2019 + 5 = Reiwa, 1 janvier 2024 = Reiwa 6)
+assert japanese.from_gregorian(date(2024, 1, 1)).display_label == "Reiwa 6, 1 janvier"
+
+# Russie avant réforme grégorienne (14 février 1918 NS = 1 février 1918 OS)
+assert julian.from_gregorian(date(1918, 2, 14)).day == 1
+Structure de data/calendars/region_calendar_map.json :
+
+{
+  "SA": { "primary": "hijri", "secondary": ["gregorian"] },
+  "IR": { "primary": "persian", "secondary": ["hijri", "gregorian"] },
+  "IL": { "primary": "hebrew", "secondary": ["gregorian"] },
+  "JP": {
+    "primary": "japanese_imperial",
+    "overrides": [{ "before": "1873-01-01", "primary": "japanese_lunisolar" }]
+  },
+  "RU": {
+    "primary": "gregorian",
+    "overrides": [{ "before": "1918-02-14", "primary": "julian" }]
+  },
+  "GB": {
+    "primary": "gregorian",
+    "overrides": [{ "before": "1752-09-14", "primary": "julian" }]
+  }
+}
+Milestone : GET /api/calendars?date=1648-10-24&region_id=IR retourne la date persane correcte.
+
+Phase 3 — Frise chronologique + frontières dynamiques (2 semaines)
+Ce que tu vas apprendre :
+
+GeoPandas avancé : filtrage temporel sur des GeoDataFrames, simplification adaptative
+Construction d'un index temporel en Python (structure de données efficace)
+JavaScript : <input type="range"> + debounce + fetch API
+Pattern "mise à jour partielle" : changer uniquement la couche Leaflet sans recharger la page
+Pourquoi un index temporel ? Tu auras des centaines de fichiers GeoJSON (un par état, par ère). Quand l'utilisateur demande "frontières en 1453", tu ne veux pas scanner tous les fichiers. L'index temporel data/geojson/index.json est une table de correspondance date → liste de fichiers construite une seule fois au démarrage, qui rend chaque requête instantanée.
+
+Fichiers à travailler :
+
+data/scripts/process_aourednik.py — à créer
+data/scripts/build_index.py — à créer
+maps/borders.py — à créer
+maps/loader.py — étendre avec l'index temporel
+static/js/timeline.js — à créer
+static/css/timeline.css — à créer
+templates/components/timeline.html — à créer
+Étapes :
+
+Cloner aourednik/historical-basemaps dans data/geojson/raw/
+Écrire data/scripts/process_aourednik.py : normalise chaque snapshot vers le schéma standard
+Écrire data/scripts/build_index.py : scanne les fichiers processés, construit index.json
+Implémenter maps/borders.py : get_borders_for_date(date) -> gpd.GeoDataFrame
+Mettre à jour api/borders.py pour utiliser get_borders_for_date()
+Écrire templates/components/timeline.html : slider <input type="range"> en bas de page (position: fixed)
+Écrire static/js/timeline.js : debounce 300ms + appel API + refresh de la couche Leaflet
+Schéma de données GeoJSON normalisé (propriétés obligatoires) :
+
+{
+  "type": "Feature",
+  "geometry": { "type": "MultiPolygon", "coordinates": [...] },
+  "properties": {
+    "region_id": "FR",
+    "region_name": "Kingdom of France",
+    "valid_from": "1648-10-24",
+    "valid_until": "1789-07-14",
+    "calendar_primary": "gregorian",
+    "data_source": "aourednik",
+    "confidence": "snapshot"
+  }
+}
+Algorithme de requête temporelle dans borders.py :
+
+def get_borders_for_date(d: date) -> gpd.GeoDataFrame:
+    if d >= CSHAPES_START:  # 1886-01-01
+        # Chargement CShapes : filtre valid_from <= d <= valid_until
+        gdf = load_cshapes()
+        return gdf[(gdf['valid_from'] <= d) & (gdf['valid_until'] >= d)]
+    else:
+        # Snapshots aourednik : trouver le snapshot le plus proche avant d
+        snapshot_year = max(y for y in SNAPSHOT_YEARS if y <= d.year)
+        return load_snapshot(snapshot_year)
+Slider timeline dans timeline.js :
+
+const slider = document.getElementById('timeline-slider');
+const yearDisplay = document.getElementById('year-display');
+
+// Debounce : n'appelle l'API que 300ms après que le slider s'est arrêté
+let debounceTimer;
+slider.addEventListener('input', () => {
+    yearDisplay.textContent = slider.value;  // Mise à jour immédiate de l'affichage
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        updateBorders(slider.value);  // Appel API différé
+    }, 300);
+});
+Milestone : Glisser la frise change les frontières sur la carte (snapshots historiques visibles).
+
+Phase 4 — Labels calendaires sur la carte (1 semaine)
+Ce que tu vas apprendre :
+
+Leaflet.js avancé : L.divIcon, tooltips, événements click sur les couches
+HTMX : mises à jour partielles du DOM sans JavaScript custom
+GeoPandas : calcul de centroïdes (gdf.centroid)
+Pourquoi HTMX pour le panneau d'info ? Au clic sur un pays, tu veux afficher un panneau avec les détails (nom, date locale, etc.). Sans HTMX, tu devrais écrire du JavaScript pour faire un fetch, puis manipuler le DOM pour insérer le HTML. HTMX fait ça avec un seul attribut HTML : hx-get="/api/calendars?..." hx-target="#panel". C'est la seule exception au "pas de JavaScript" : HTMX est une bibliothèque JS, mais tu n'écris pas de JS toi-même.
+
+Fichiers à travailler :
+
+api/borders.py — ajouter ?calendar=true qui inclut les labels dans les propriétés GeoJSON
+static/js/calendar_labels.js — L.divIcon aux centroïdes
+templates/components/region_info.html — panneau HTMX latéral
+templates/components/calendar_popup.html — template de popup Leaflet
+Étapes :
+
+Mettre à jour api/borders.py : si ?calendar=true, calculer les centroïdes et ajouter calendar_label + centroid_lat/centroid_lon dans les propriétés de chaque feature
+Modifier map.js pour passer ?calendar=true et afficher le tooltip Leaflet avec la propriété calendar_label
+Ajouter les événements click sur les features → déclencher un appel HTMX
+Créer templates/components/region_info.html (Jinja2 + HTMX)
+Créer l'endpoint Flask GET /regions/<region_id>/info qui retourne le fragment HTML du panneau
+Calcul des labels dans l'API :
+
+# Dans api/borders.py, si calendar=True
+from calendars.dispatcher import get_calendar_for_region
+
+for feature in geojson['features']:
+    region_id = feature['properties']['region_id']
+    label = get_calendar_for_region(region_id, query_date)
+    feature['properties']['calendar_label'] = label.display_label
+    # Centroïde pour le positionnement des labels
+    centroid = gdf.loc[idx, 'geometry'].centroid
+    feature['properties']['centroid'] = [centroid.y, centroid.x]
+Milestone : Cliquer sur l'Iran affiche "4 Aban 1027 (Calendrier persan)" dans le panneau latéral.
+
+Phase 5 — Données CShapes (précision au jour, 1886+) (2 semaines)
+Ce que tu vas apprendre :
+
+Manipulation de fichiers Shapefile avec GeoPandas (format plus complexe que GeoJSON)
+Index spatial R-tree pour les requêtes géographiques performantes
+Stratégies de cache et préchauffage au démarrage
+Fichiers à travailler :
+
+data/scripts/process_cshapes.py — à créer
+maps/borders.py — mettre à jour pour CShapes
+maps/spatial_index.py — à créer
+api/borders.py — ajouter sélecteur mois/jour pour post-1886
+Milestone : Les frontières du 11 novembre 1918 (armistice) diffèrent de celles du 10 novembre.
+
+Phase 6 — Docker + Production (1 semaine)
+Ce que tu vas apprendre :
+
+Multi-stage Docker build : pourquoi deux stages (builder + runtime) pour garder l'image légère
+Gunicorn : workers, timeout, configuration pour une app Flask
+Nginx : reverse proxy, compression, serving des fichiers statiques
+Pourquoi Gunicorn + Nginx et pas juste Flask ? Flask dev server (flask run) est mono-thread et non-optimisé. Gunicorn gère plusieurs requêtes en parallèle (workers). Nginx est devant pour : servir les fichiers statiques directement (sans passer par Python), compresser les réponses, gérer les connexions TLS, et faire du rate-limiting sur l'API.
+
+Fichiers à travailler :
+
+Dockerfile — multi-stage
+docker-compose.yml — services web + redis + nginx
+docker-compose.dev.yml — override dev
+.env.example
+Structure Dockerfile :
+
+# Stage 1 : builder — installe Poetry et exporte les dépendances
+FROM python:3.11-slim AS builder
+RUN pip install poetry
+COPY pyproject.toml poetry.lock ./
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+# Stage 2 : runtime — image GDAL pour GeoPandas
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.8 AS runtime
+COPY --from=builder /app/requirements.txt .
+RUN pip install -r requirements.txt
+COPY . /app
+WORKDIR /app
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "app:create_app()"]
+Milestone : docker-compose up → application accessible sur http://localhost:80/.
+
+Sources de données historiques
+Source	Couverture	Licence	URL
+CShapes 2.0 (ETH Zurich)	1886–2019, précision au jour	CC BY 4.0	icr.ethz.ch/data/cshapes/
+aourednik/historical-basemaps	–3000 à 2000 CE, snapshots ~100 ans	CC BY-SA 4.0	github.com/aourednik/historical-basemaps
+Natural Earth	Contemporain (fond de carte)	Domaine public	naturalearthdata.com
+AWMC	Antiquité gréco-romaine	CC BY	awmc.unc.edu/awmc/map_data/
+Défis techniques à anticiper
+1. Dates BCE dans JavaScript
+Date JS est instable avant 100 CE. Le slider utilise un entier (année), pas un objet Date.
+
+2. Précision Hijri historique
+hijri-converter ne couvre que 1937-2077. Avant : fallback sur convertdate.islamic (algorithme tabulaire, ±1-2 jours). Documenter cette limite dans l'UI.
+
+3. Qualité des données aourednik
+Certains polygones mal formés. Charger en try/except par feature, loguer sans crasher.
+
+4. Taille des réponses GeoJSON
+GeoJSON monde pleine résolution = 20-50 MB. Simplification côté serveur obligatoire. Le frontend passe son zoom → tolérance adaptée (zoom 2 → 0.5°, zoom 6 → 0.05°).
+
+5. Réforme grégorienne par pays
+Chaque pays a adopté le calendrier grégorien à une date différente. gregorian_adoption.json doit être exhaustif.
+
+6. Croisement de l'antiméridien
+Russie, Alaska, Pacifique. Utiliser le plugin Leaflet leaflet-antimeridian ou pré-traiter avec Shapely.
+
+Vérification end-to-end
+pytest calendars/tests/ — vecteurs de test historiques pour chaque calendrier
+pytest tests/test_api_*.py — tester les endpoints avec des dates connues
+Test manuel UI :
+Glisser la frise vers 1914 → vérifier la présence de l'Autriche-Hongrie (disparaît en 1918)
+Cliquer sur l'Iran le 01/01/1979 → "10 Dey 1357 (Persan)"
+Cliquer sur Israël le 05/06/1967 → date hébraïque correcte
+docker-compose up → accès sur http://localhost:80/
+Ordre de développement recommandé
+Phase 0 (Flask basics)
+    ↓
+Phase 1 (carte contemporaine)  ←→  Phase 2 (calendriers) — indépendants, parallélisables
+    ↓                                   ↓
+         Phase 3 (frise + frontières dynamiques)
+                      ↓
+         Phase 4 (labels calendaires)
+                      ↓
+         Phase 5 (CShapes précision)
+                      ↓
+         Phase 6 (Docker prod)

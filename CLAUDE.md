@@ -56,7 +56,7 @@ Interactive historical world map web application built entirely in Python (backe
 See full plan at: `~/.claude/plans/tender-cooking-crayon.md`
 
 Phases:
-- [ ] **Phase 0** — Fix existing bugs, learn Flask Application Factory pattern
+- [x] **Phase 0** — Fix existing bugs, learn Flask Application Factory pattern *(pending: `flask run` smoke test)*
 - [ ] Phase 1 — Contemporary map via REST API, learn GeoPandas + Leaflet.js
 - [ ] Phase 2 — Calendar conversion engine, learn ABC pattern + calendar libraries
 - [ ] Phase 3 — Timeline slider + dynamic historical borders
@@ -93,8 +93,3 @@ pytest
 docker-compose up
 ```
 
-## Key Files with Known Issues (Phase 0)
-
-- [app.py](app.py): 4 syntax/logic bugs (see plan for details)
-- [maps/loader.py](maps/loader.py): mismatched quote on line 3
-- [templates/index.html](templates/index.html): broken HTML structure, needs full rebuild

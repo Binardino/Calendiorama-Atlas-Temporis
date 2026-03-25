@@ -12,7 +12,10 @@ dependencies = [
     "geopandas (>=1.1.1,<2.0.0)",
     "shapely (>=2.1.2,<3.0.0)",
     "folium (>=0.20.0,<0.21.0)",
-    "flask (>=3.1.2,<4.0.0)"
+    "flask (>=3.1.2,<4.0.0)",
+    "flask-caching (>=2.3)",
+    "flask-compress (>=1.14)",
+    "orjson (>=3.9)"
 ]
 
 

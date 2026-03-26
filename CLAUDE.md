@@ -53,7 +53,7 @@ Interactive historical world map web application built entirely in Python (backe
 
 ## Current Development Phase
 
-See full plan at: `~/.claude/plans/tender-cooking-crayon.md`
+See full plan at: `~/.claude/plans/structured-wondering-eclipse.md`
 
 Phases:
 - [x] **Phase 0** — Fix existing bugs, learn Flask Application Factory pattern
@@ -66,7 +66,21 @@ Phases:
   - [x] `create_app()`: init `flask-caching` + `flask-compress`
   - [x] `static/js/map.js`: Leaflet init + fetch `/api/borders`
   - [x] `templates/index.html`: extract inline JS
-- [ ] Phase 2 — Calendar conversion engine, learn ABC pattern + calendar libraries
+- [ ] **Phase 2** — Calendar conversion engine, learn ABC pattern + calendar libraries *(in progress)*
+  - [x] Dependencies: convertdate, hijri-converter, jdatetime, pyluach
+  - [x] `calendars/base.py`: `CalendarDate` dataclass + `CalendarConverter` ABC
+  - [x] `calendars/gregorian.py`: GregorianCalendar converter
+  - [x] `calendars/julian.py`: JulianCalendar converter
+  - [x] `calendars/coptic.py`: CopticCalendar converter
+  - [x] `calendars/ethiopian.py`: EthiopianCalendar converter
+  - [ ] `calendars/hijri.py`: HijriCalendar converter (hijri-converter + convertdate fallback)
+  - [ ] `calendars/hebrew.py`: HebrewCalendar converter (pyluach)
+  - [ ] `calendars/persian.py`: PersianCalendar converter (jdatetime)
+  - [ ] `calendars/japanese.py`: JapaneseCalendar converter (JSON era lookup)
+  - [ ] `calendars/dispatcher.py`: `get_calendars(iso_region, jdn)`
+  - [ ] `data/calendars/`: japanese_eras.json + region_calendar_map.json
+  - [ ] `api/calendars.py`: Blueprint + `GET /api/calendars`
+  - [ ] `tests/calendars/`: unit tests per converter
 - [ ] Phase 3 — Timeline slider + dynamic historical borders
 - [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
 - [ ] Phase 5 — CShapes day-level precision data (1886+)

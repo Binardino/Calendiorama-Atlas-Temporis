@@ -57,15 +57,15 @@ See full plan at: `~/.claude/plans/tender-cooking-crayon.md`
 
 Phases:
 - [x] **Phase 0** — Fix existing bugs, learn Flask Application Factory pattern
-- [ ] **Phase 1** — Contemporary map via REST API, learn GeoPandas + Leaflet.js *(in progress)*
+- [x] **Phase 1** — Contemporary map via REST API, learn GeoPandas + Leaflet.js
   - [x] Dependencies: flask-caching, flask-compress, orjson
   - [x] Data: `ne_110m_admin_0_countries.geojson` in `data/geojson/raw/`
   - [x] `maps/loader.py`: `load_geojson()` working
   - [x] `api/borders.py`: Blueprint `borders_bp` + `GET /api/borders` → GeoJSON 200 OK
   - [x] `app.py`: Blueprint registered under `/api`
-  - [ ] `create_app()`: init `flask-caching` + `flask-compress`
-  - [ ] `static/js/map.js`: Leaflet init + fetch `/api/borders`
-  - [ ] `templates/index.html`: extract inline JS
+  - [x] `create_app()`: init `flask-caching` + `flask-compress`
+  - [x] `static/js/map.js`: Leaflet init + fetch `/api/borders`
+  - [x] `templates/index.html`: extract inline JS
 - [ ] Phase 2 — Calendar conversion engine, learn ABC pattern + calendar libraries
 - [ ] Phase 3 — Timeline slider + dynamic historical borders
 - [ ] Phase 4 — Calendar labels overlay on map, learn HTMX

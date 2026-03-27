@@ -4,6 +4,11 @@ from convertdate import persian
 
 class PersianCalendar(CalendarConverter):
     MONTH_NAMES = {
+    # Persian Solar Hijri (Jalali) calendar, officially used in Iran and Afghanistan.
+    # Year 1 = Nowruz of 622 CE (vernal equinox of the Hijra year).
+    # Currently ~621 years behind Gregorian.
+    # 12 months: first 6 have 31 days, next 5 have 30, 
+    # last has 29 (30 in leap year).
     1: "Farvardin", 2: "Ordibehesht", 3: "Khordad",
     4: "Tir",       5: "Mordad",      6: "Shahrivar",
     7: "Mehr",      8: "Aban",        9: "Azar",

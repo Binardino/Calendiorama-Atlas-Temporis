@@ -17,4 +17,4 @@ class CopticCalendar(CalendarConverter):
 
     def to_jdn(self, cal_date: CalendarDate) -> int:
         # Implementation of Coptic date to JDN conversion
-        return int(coptic.to_jd(cal_date.year, cal_date.month, cal_date.day))
+        return int(coptic.to_jd(cal_date.year, cal_date.month, cal_date.day) + 0.5)

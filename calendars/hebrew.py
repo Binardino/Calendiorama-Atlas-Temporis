@@ -1,27 +1,32 @@
 from calendars.base import CalendarConverter, CalendarDate
 from pyluach import dates
+from datetime import date
 
 class HebrewCalendar(CalendarConverter):
-    MONTH_NAMES = {
-        # Lunisolar calendar: 12 months in ordinary years, 13 in leap years (7/19 cycle).
-        # Months numbered from Tishri (civil new year), 
-        # but the religious year starts at Nisan.
-        # Adar II (month 7) only exists in leap years; 
-        # pyluach handles this automatically.
-        1: "Tishri",  2: "Cheshvan", 3: "Kislev",  4: "Tevet",
-        5: "Shevat",  6: "Adar I",   7: "Adar II",  8: "Nisan",
-        9: "Iyar",   10: "Sivan",   11: "Tammuz", 12: "Av",
-        13: "Elul",
-                    }
+    # Hebrew lunisolar calendar. 
+    # 12 months in ordinary years, 13 in leap years (7/19 Metonic cycle).
+    # pyluach numbers months from Nisan (religious year): 
+    # Nisan=1 ... Tevet=10 ... Adar II=13.
+    # month_name() is used for formatting 
+    # to avoid manual dict that could desync from pyluach numbering.
     
     def from_jdn(self, jdn:int) -> CalendarDate:
-        h_date = dates.HebrewDate.from_jd(jdn)
+        # JDN → Python date → HebrewDate (pyluach has no direct from_jd).
+        # 1721425 = offset between Python ordinal (epoch: Jan 1 year 1 = ordinal 1)
+        #           and Julian Day Number  (epoch: Jan 1 4713 BCE = JDN 1)
+
+        python_date = date.fromordinal(jdn - 1721425)
+        h_date      = dates.HebrewDate.from_pydate(python_date)
 
         return CalendarDate(year=h_date.year,
                             month=h_date.month,
                             day=h_date.day,
                             calendar_name="Hebrew",
-                            formatted=f"{h_date.day} {self.MONTH_NAMES[h_date.month]} {h_date.year}")
+                            formatted=f"{h_date.day} {h_date.month_name()} {h_date.year}")
 
     def to_jdn(self, cal_date:CalendarDate) -> int:
-        return int(dates.HebrewDate(cal_date.year, cal_date.month, cal_date.day).to_jd())
+        # HebrewDate → Python date → JDN 
+        # (reverse of from_jdn, avoids JulianDay float handling)
+        pydate = dates.HebrewDate(cal_date.year, cal_date.month, cal_date.day).to_pydate()
+        return pydate.toordinal() + 1721425
+        

@@ -1,5 +1,5 @@
 from calendars.base import CalendarConverter, CalendarDate
-from hijri_converter import convert
+from hijridate import convert
 from convertdate import islamic, gregorian
 
 class HijriCalendar(CalendarConverter):
@@ -52,4 +52,4 @@ class HijriCalendar(CalendarConverter):
         # Uses tabular Islamic arithmetic for all dates
         #               (consistent, no range restriction).
         # Note: for dates in 1937–2077, this may differ by ±1–2 days from Umm al-Qura.
-        return int(islamic.to_jd(cal_date.year, cal_date.month, cal_date.day))
+        return int(islamic.to_jd(cal_date.year, cal_date.month, cal_date.day) + 0.5)

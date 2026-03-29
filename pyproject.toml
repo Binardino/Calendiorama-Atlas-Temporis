@@ -17,7 +17,7 @@ dependencies = [
     "flask-compress (>=1.14)",
     "orjson (>=3.9)",
     "convertdate (>=2.4)",
-    "hijri-converter (>=2.3)",
+    "hijridate (>=2.3)",
     "jdatetime (>=4.1)",
     "pyluach (>=1.2)",
 ]

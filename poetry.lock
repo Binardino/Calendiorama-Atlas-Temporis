@@ -741,21 +741,6 @@ all = ["GeoAlchemy2", "SQLAlchemy (>=2.0)", "folium", "geopy", "mapclassify (>=2
 dev = ["codecov", "pre-commit", "pytest (>=3.1.0)", "pytest-cov", "pytest-xdist", "ruff"]
 
 [[package]]
-name = "hijri-converter"
-version = "2.3.2.post1"
-description = "[DEPRECATED] Use 'hijridate' package instead"
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "hijri_converter-2.3.2.post1-py3-none-any.whl", hash = "sha256:51124b40b27d072c402a4eeea1a368dd3952992f250109117292c8ecf9c66f28"},
-    {file = "hijri_converter-2.3.2.post1.tar.gz", hash = "sha256:986657ccd83a5beaf233ce5a219645747e885c45d4833bd2a8fa1b927fa39570"},
-]
-
-[package.dependencies]
-hijridate = "2.3.0"
-
-[[package]]
 name = "hijridate"
 version = "2.3.0"
 description = "Accurate Hijri-Gregorian dates converter based on the Umm al-Qura calendar"
@@ -1897,4 +1882,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "86a5df93861ab2eb7a414877444d08ea3fd50c52bf5eb1b5ffa4ad2d5398fc75"
+content-hash = "46652445c9b77ca1429cef63d701b51cae3b5a7ba994bb6848f997122eda2cbe"

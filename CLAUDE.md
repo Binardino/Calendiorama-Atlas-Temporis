@@ -69,18 +69,18 @@ Phases:
 - [ ] **Phase 2** — Calendar conversion engine, learn ABC pattern + calendar libraries *(in progress)*
   - [x] Dependencies: convertdate, hijri-converter, jdatetime, pyluach
   - [x] `calendars/base.py`: `CalendarDate` dataclass + `CalendarConverter` ABC
-  - [x] `calendars/gregorian.py`: GregorianCalendar converter
-  - [x] `calendars/julian.py`: JulianCalendar converter
-  - [x] `calendars/coptic.py`: CopticCalendar converter
-  - [x] `calendars/ethiopian.py`: EthiopianCalendar converter
-  - [ ] `calendars/hijri.py`: HijriCalendar converter (hijri-converter + convertdate fallback)
-  - [ ] `calendars/hebrew.py`: HebrewCalendar converter (pyluach)
-  - [ ] `calendars/persian.py`: PersianCalendar converter (jdatetime)
+  - [x] `calendars/gregorian.py`: GregorianCalendar converter + tests
+  - [x] `calendars/julian.py`: JulianCalendar converter + tests
+  - [x] `calendars/coptic.py`: CopticCalendar converter + tests
+  - [x] `calendars/ethiopian.py`: EthiopianCalendar converter + tests (via convertdate.coptic + year offset +276)
+  - [x] `calendars/hijri.py`: HijriCalendar converter + tests (Umm al-Qura + tabular fallback)
+  - [x] `calendars/hebrew.py`: HebrewCalendar converter + tests (pyluach, Nisan-based month numbering)
+  - [x] `calendars/persian.py`: PersianCalendar converter + tests
   - [ ] `calendars/japanese.py`: JapaneseCalendar converter (JSON era lookup)
   - [ ] `calendars/dispatcher.py`: `get_calendars(iso_region, jdn)`
   - [ ] `data/calendars/`: japanese_eras.json + region_calendar_map.json
   - [ ] `api/calendars.py`: Blueprint + `GET /api/calendars`
-  - [ ] `tests/calendars/`: unit tests per converter
+  - [ ] `tests/calendars/test_converters.py`: central runner (`python tests/calendars/test_converters.py`)
 - [ ] Phase 3 — Timeline slider + dynamic historical borders
 - [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
 - [ ] Phase 5 — CShapes day-level precision data (1886+)

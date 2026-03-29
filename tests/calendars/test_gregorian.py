@@ -1,5 +1,3 @@
-
-import pytest
 from calendars.gregorian import GregorianCalendar, CalendarDate
 
 # testing gregorian based on known date : January 1st 2000

@@ -22,7 +22,7 @@ class PersianCalendar(CalendarConverter):
         return CalendarDate(year=year,
                             month=month,
                             day=day,
-                            calendar_name="persian",
+                            calendar_name="Persian",
                             formatted=f"{day} {self.MONTH_NAMES[month]} {year}"
         )
     

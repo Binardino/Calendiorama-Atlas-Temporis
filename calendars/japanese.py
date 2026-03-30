@@ -33,12 +33,32 @@ class JapaneseCalendar(CalendarConverter):
         )
 
     def from_jdn(self, jdn: int) -> CalendarDate:
-        return CalendarDate(year=year,
-                            month=month,
-                            day=day,
-                            calendar_name="Japanese",
-                            formatted=f"{day} {self.MONTH_NAMES[month]} {year}"
+        # 1721425 days is the fixed offset between Python's date ordinal epoch
+        # (year 1, Jan 1) and the Julian Day Number epoch (4713 BCE).
+        greg_date = date.fromordinal(jdn - 1721425)
+
+        era = self._find_era(greg_date)
+
+        if era is None:
+            # Dates before 645 CE or in historical gaps have no era name.
+            # wip how to format pre 645 CE dates
+            formatted = greg_date.isoformat()
+        else:
+            # Era year 1 = the calendar year the era began.
+            # e.g. Heisei started 1989 → year 2000 = 2000 - 1989 + 1 = 12
+            era_year  = greg_date.year - era["start"].year + 1
+            formatted = f"{era['kanji']} {era_year}年 {greg_date.day} {greg_date.strftime('%B')}"
+
+        return CalendarDate(
+            year=greg_date.year,
+            month=greg_date.month,
+            day=greg_date.day,
+            calendar_name="Japanese",
+            formatted=formatted,
         )
-        
-    def to_jdn(self, CalendarDate) -> int:
-        return super().to_jdn(date)
+
+    def to_jdn(self, cal_date: CalendarDate) -> int:
+        # CalendarDate.year stores the Gregorian year (same months/days as Gregorian).
+        # Inverse of date.fromordinal(jdn - 1721425).
+        d = date(cal_date.year, cal_date.month, cal_date.day)
+        return d.toordinal() + 1721425

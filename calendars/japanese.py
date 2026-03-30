@@ -1,10 +1,16 @@
 
 from calendars.base import CalendarConverter, CalendarDate
 from pathlib import Path
+from datetime import date
 import json
 
 class JapaneseCalendar(CalendarConverter):
+    # Japanese calendar uses same months & days structure as Gregorian
+    # BUT uses specific era counting
+    # No need to have astronomical conversion 
+    # BUT need to have mapping table between Gregorian & Japanese era
     def __init__(self):
+        # one time loader of all Japanese eras as mapper
         era_file = Path('data/calendars/japanese_eras.json')
         with open(era_file, 'r') as f:
             raw = json.load(f)

@@ -20,6 +20,18 @@ class JapaneseCalendar(CalendarConverter):
             for era in raw['eras']
         ]
 
+    def _find_era(self, greg_date: date) -> dict | None:
+        # Check which Japanese era matches Input Gregorian date
+         
+        # Linear scan over 248 eras — fast enough for this use case.
+        # Boundary convention: use <= for end so that the last day of an era
+        # (e.g. 2019-04-30 for Heisei) is still matched, not lost in a gap.
+        return next(
+            (era for era in self._eras
+             if greg_date >= era["start"] and (era["end"] is None or greg_date <= era["end"])),
+            None,  # date before 645-07-17 or in an inter-era gap
+        )
+
     def from_jdn(self, jdn: int) -> CalendarDate:
         return CalendarDate(year=year,
                             month=month,

@@ -53,7 +53,7 @@ class JapaneseCalendar(CalendarConverter):
             # Era year 1 = the calendar year the era began.
             # e.g. Heisei started 1989 → year 2000 = 2000 - 1989 + 1 = 12
             era_year  = greg_date.year - era["start"].year + 1
-            formatted = f"{era['kanji']} {era_year}年 {greg_date.day} {greg_date.strftime('%B')}"
+            formatted = f"{era['kanji']} {era_year}年{greg_date.month}月{greg_date.day}日"
 
         return CalendarDate(
             year=greg_date.year,

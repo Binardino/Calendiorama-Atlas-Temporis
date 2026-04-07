@@ -12,7 +12,7 @@ class JapaneseCalendar(CalendarConverter):
     def __init__(self):
         # one time loader of all Japanese eras as mapper
         era_file = Path(__file__).parent.parent / 'data' / 'calendars' / 'japanese_eras.json'
-        with open(era_file, 'r') as f:
+        with open(era_file, 'r', encoding='utf-8') as f:
             raw = json.load(f)
 
         # Pre-process: convert ISO date strings to datetime.date objects once at init.

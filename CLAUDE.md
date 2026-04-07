@@ -66,8 +66,8 @@ Phases:
   - [x] `create_app()`: init `flask-caching` + `flask-compress`
   - [x] `static/js/map.js`: Leaflet init + fetch `/api/borders`
   - [x] `templates/index.html`: extract inline JS
-- [ ] **Phase 2** — Calendar conversion engine, learn ABC pattern + calendar libraries *(in progress)*
-  - [x] Dependencies: convertdate, hijri-converter, jdatetime, pyluach
+- [x] **Phase 2** — Calendar conversion engine, learn ABC pattern + calendar libraries
+  - [x] Dependencies: convertdate, hijridate, jdatetime, pyluach
   - [x] `calendars/base.py`: `CalendarDate` dataclass + `CalendarConverter` ABC
   - [x] `calendars/gregorian.py`: GregorianCalendar converter + tests
   - [x] `calendars/julian.py`: JulianCalendar converter + tests
@@ -76,12 +76,17 @@ Phases:
   - [x] `calendars/hijri.py`: HijriCalendar converter + tests (Umm al-Qura + tabular fallback)
   - [x] `calendars/hebrew.py`: HebrewCalendar converter + tests (pyluach, Nisan-based month numbering)
   - [x] `calendars/persian.py`: PersianCalendar converter + tests
-  - [ ] `calendars/japanese.py`: JapaneseCalendar converter (JSON era lookup)
-  - [ ] `calendars/dispatcher.py`: `get_calendars(iso_region, jdn)`
-  - [ ] `data/calendars/`: japanese_eras.json + region_calendar_map.json
-  - [ ] `api/calendars.py`: Blueprint + `GET /api/calendars`
-  - [ ] `tests/calendars/test_converters.py`: central runner (`python tests/calendars/test_converters.py`)
-- [ ] Phase 3 — Timeline slider + dynamic historical borders
+  - [x] `calendars/japanese.py`: JapaneseCalendar converter + tests (JSON era lookup, 248 eras)
+  - [x] `calendars/dispatcher.py`: `get_calendars(iso_region, jdn)` with absolute path
+  - [x] `data/calendars/japanese_eras.json` + `region_calendar_map.json`
+  - [x] `api/calendars.py`: Blueprint + `GET /api/calendars?date=YYYY-MM-DD&region=ISO`
+  - [x] `tests/calendars/`: unit tests for all 8 converters + dispatcher
+- [ ] **Phase 3** — Timeline slider + dynamic historical borders *(in progress)*
+  - [ ] Data: `aourednik/historical-basemaps` GeoJSON in `data/geojson/historical/` (gitignored)
+  - [ ] `maps/loader.py`: `get_available_years()` + `find_nearest_year(year, available)`
+  - [ ] `api/borders.py`: `GET /api/borders?year=<int>` with `query_string=True` cache
+  - [ ] `templates/index.html`: `<input type="range">` slider + year label
+  - [ ] `static/js/map.js`: slider event listener + `updateBorders(year)`
 - [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
 - [ ] Phase 5 — CShapes day-level precision data (1886+)
 - [ ] Phase 6 — Docker production deployment

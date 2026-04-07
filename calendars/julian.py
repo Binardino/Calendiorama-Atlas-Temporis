@@ -17,4 +17,4 @@ class JulianCalendar(CalendarConverter):
 
     def to_jdn(self, cal_date: CalendarDate) -> int:
         # Implementation of Julian date to JDN conversion
-        return int(julian.to_jd(cal_date.year, cal_date.month, cal_date.day))
+        return int(julian.to_jd(cal_date.year, cal_date.month, cal_date.day) + 0.5)

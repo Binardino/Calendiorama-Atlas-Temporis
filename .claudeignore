@@ -1,0 +1,32 @@
+# Dépendances et environnements virtuels
+venv/
+.env/
+env/
+node_modules/
+
+# Fichiers compilés et cache (très gourmands en tokens)
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Dossiers de build et logs
+build/
+dist/
+logs/
+*.log
+
+# Bases de données et gros fichiers
+*.sqlite3
+*.db
+*.csv
+*.tsv
+*.jsonl
+*.pdf
+
+# Fichiers sensibles (sécurité)
+.env
+secrets.*
+*.pem
+*.key

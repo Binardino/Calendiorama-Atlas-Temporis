@@ -15,7 +15,8 @@ CONVERTERS = {
     "japanese":   JapaneseCalendar,
 }
 
-_region_map = json.loads(Path('data/calendars/region_calendar_map.json').read_text())
+_DATA_DIR   = Path(__file__).parent.parent / 'data' / 'calendars'
+_region_map = json.loads((_DATA_DIR / 'region_calendar_map.json').read_text())
 
 def get_calendars(region_id:str, jdn:int) -> list[CalendarDate]:
     names = _region_map.get(region_id, _region_map['default'])

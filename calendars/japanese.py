@@ -11,7 +11,7 @@ class JapaneseCalendar(CalendarConverter):
     # BUT need to have mapping table between Gregorian & Japanese era
     def __init__(self):
         # one time loader of all Japanese eras as mapper
-        era_file = Path('data/calendars/japanese_eras.json')
+        era_file = Path(__file__).parent.parent / 'data' / 'calendars' / 'japanese_eras.json'
         with open(era_file, 'r') as f:
             raw = json.load(f)
 

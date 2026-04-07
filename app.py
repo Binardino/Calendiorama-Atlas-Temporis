@@ -15,6 +15,9 @@ def create_app(config_name='development'):
     from api.borders import borders_bp
     app.register_blueprint(borders_bp, url_prefix='/api')
 
+    from api.calendars import calendars_bp
+    app.register_blueprint(calendars_bp, url_prefix='/api')
+
     @app.route('/')
     def index():
         return render_template('index.html')

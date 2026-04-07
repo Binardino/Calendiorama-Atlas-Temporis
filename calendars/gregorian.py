@@ -4,7 +4,7 @@ from datetime import date
 class GregorianCalendar(CalendarConverter):
     def from_jdn(self, jdn: int) -> CalendarDate:
         #Gregorian calendar
-        gregorian_date = date.fromordinal(jdn - 1721424)
+        gregorian_date = date.fromordinal(jdn - 1721425)
 
         return CalendarDate(
             year=gregorian_date.year,
@@ -17,6 +17,6 @@ class GregorianCalendar(CalendarConverter):
     def to_jdn(self, cal_date: CalendarDate) -> int:
         d_date = date(cal_date.year, cal_date.month, cal_date.day)
         
-        return d_date.toordinal() + 1721424
+        return d_date.toordinal() + 1721425
 
 

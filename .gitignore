@@ -43,6 +43,7 @@ Thumbs.db
 
 # Project data — raw source files are not committed (large, reproducible)
 data/geojson/raw/
+data/geojson/historical/
 data/geojson/*.zip
 conversation.md
 data/raw/

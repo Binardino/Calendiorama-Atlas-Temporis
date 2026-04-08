@@ -20,18 +20,19 @@ def get_available_years() -> list[int]:
     """
     historical_map_dir = DATA_DIR / "historical"
     year_list = []
-    for map_file in raw_map_list:
+
+    for map_file in historical_map_dir.glob("*.geojson"):
         try:
-            name     = map_file.stem      # e.g. "map_1500"
-            year_str = name.split("_")[1] # e.g. "1500"
-            
+            name     = map_file.stem        # e.g. "world_1500" or "world_bc3000"
+            year_str = name.split("_")[1]   # e.g. "1500" or "bc3000"
+
             if year_str.startswith("bc"):
-                year_str = year_str[2:]   # strip the _bc string e.g. "bc_500" → "500"
-                year     = -int(year_str) # e.g. "bc_500" → "-500"
+                year = -int(year_str[2:])   # "bc3000" → -3000
             else:
-                year = int(year_str)
+                year = int(year_str)        # "1500"   →  1500
+
             year_list.append(year)
-        
+
         except (IndexError, ValueError) as e:
             print(f"Skipping file {map_file.name}: {e}")
 

@@ -1,12 +1,24 @@
 from pathlib import Path
 import geopandas as gpd
 
+# Absolute path to data/geojson/, resolved from this file's location.
+# Using __file__ avoids CWD-dependent relative paths that break under pytest.
 DATA_DIR = Path(__file__).parent.parent / "data" / "geojson"
 
-def get_available_years() -> list[int] :
-    historical_map_dir = DATA_DIR / "historical"
-    raw_map_list = [map_file for map_file in historical_map_dir.glob("*.geojson")]
 
+def get_available_years() -> list[int]:
+    """
+    Scan data/geojson/historical/ and return all available snapshot years as
+    a sorted list of integers. BCE years are negative (e.g. -3000).
+
+    File naming convention (aourednik/historical-basemaps):
+        world_1500.geojson   →  1500  (CE)
+        world_bc3000.geojson → -3000  (BCE)
+        world_0.geojson      →     0  (year zero)
+
+    Files that do not match the expected pattern are skipped with a warning.
+    """
+    historical_map_dir = DATA_DIR / "historical"
     year_list = []
     for map_file in raw_map_list:
         try:

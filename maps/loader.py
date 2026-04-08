@@ -37,11 +37,38 @@ def get_available_years() -> list[int]:
 
     return sorted(year_list)
 
+
 def find_nearest_year(year: int, available: list[int]) -> int:
+    """
+    Return the largest year in `available` that is <= `year`.
+
+    We never predict the future: if the requested year is 1523 and the
+    available snapshots are [..., 1500, 1530, ...], we return 1500.
+
+    If `year` is before all available snapshots (e.g. -200000), we fall back
+    to the oldest available snapshot (available[0], since the list is sorted).
+
+    Args:
+        year:      The target year (integer, negative for BCE).
+        available: Sorted list of snapshot years from get_available_years().
+
+    Returns:
+        The closest available snapshot year that does not exceed `year`.
+    """
     candidates = [y for y in available if y <= year]
     return max(candidates) if candidates else available[0]
-    
+
+
 def load_geojson(path: Path) -> gpd.GeoDataFrame:
+    """
+    Load a GeoJSON file relative to DATA_DIR and return a GeoDataFrame.
+
+    Args:
+        path: Path relative to data/geojson/ (e.g. Path("raw/ne_110m.geojson")).
+
+    Raises:
+        FileNotFoundError: If the resolved path does not exist.
+    """
     full_path = DATA_DIR / path
     if not full_path.exists():
         raise FileNotFoundError(f"File {full_path} does not exist.")

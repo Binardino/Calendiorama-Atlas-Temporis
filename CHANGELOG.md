@@ -5,7 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 3: Historical Borders Timeline
+## [Unreleased] — Phase 4: Calendar Labels Overlay
+
+---
+
+## [0.3.0] — Phase 3: Historical Borders Timeline
+
+### Added
+- `maps/loader.py`: `get_available_years()` — scans `data/geojson/historical/`, parses `world_bc<N>.geojson` → negative int and `world_<N>.geojson` → positive int, returns sorted list
+- `maps/loader.py`: `find_nearest_year(year, available)` — returns largest available snapshot year ≤ requested year (no future prediction)
+- `templates/index.html`: `<input type="range">` timeline slider (−3000 to 2010 CE) with BCE/CE label overlay
+- `static/js/map.js`: `formatYear(year)` — formats signed integer as "500 BCE" / "Year 0" / "2010 CE"
+- `static/js/map.js`: slider `input` event listener with 300ms debounce to avoid flooding the API while dragging
+- `README.md`: Data Sources section with GPL v3 attribution for aourednik/historical-basemaps
+
+### Changed
+- `api/borders.py`: `GET /api/borders?year=<int>` — optional `year` param routes to historical snapshot; absent → Natural Earth contemporary data
+- `api/borders.py`: cache decorator updated to `query_string=True` so each `?year=X` is cached independently
+- `static/js/map.js`: `updateBorders(year)` now accepts integer year and builds `?year=` query param
+- `maps/loader.py`: added docstrings to all three functions
+
+### Data
+- `data/geojson/historical/world_*.geojson`: 51 snapshots from aourednik/historical-basemaps (−123000 to 2010 CE), gitignored — GPL v3, author Alexandre Ourednik
+
+---
 
 ## [0.2.0] — Phase 2: Calendar Conversion Engine
 

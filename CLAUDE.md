@@ -81,12 +81,12 @@ Phases:
   - [x] `data/calendars/japanese_eras.json` + `region_calendar_map.json`
   - [x] `api/calendars.py`: Blueprint + `GET /api/calendars?date=YYYY-MM-DD&region=ISO`
   - [x] `tests/calendars/`: unit tests for all 8 converters + dispatcher
-- [ ] **Phase 3** — Timeline slider + dynamic historical borders *(in progress)*
-  - [ ] Data: `aourednik/historical-basemaps` GeoJSON in `data/geojson/historical/` (gitignored)
-  - [ ] `maps/loader.py`: `get_available_years()` + `find_nearest_year(year, available)`
-  - [ ] `api/borders.py`: `GET /api/borders?year=<int>` with `query_string=True` cache
-  - [ ] `templates/index.html`: `<input type="range">` slider + year label
-  - [ ] `static/js/map.js`: slider event listener + `updateBorders(year)`
+- [x] **Phase 3** — Timeline slider + dynamic historical borders
+  - [x] Data: `aourednik/historical-basemaps` GeoJSON in `data/geojson/historical/` (gitignored, GPL v3)
+  - [x] `maps/loader.py`: `get_available_years()` + `find_nearest_year(year, available)`
+  - [x] `api/borders.py`: `GET /api/borders?year=<int>` with `query_string=True` cache
+  - [x] `templates/index.html`: `<input type="range">` slider + year label
+  - [x] `static/js/map.js`: slider event listener + `updateBorders(year)` + 300ms debounce
 - [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
 - [ ] Phase 5 — CShapes day-level precision data (1886+)
 - [ ] Phase 6 — Docker production deployment
@@ -94,7 +94,7 @@ Phases:
 ## Historical Data Sources
 
 - **CShapes 2.0**: 1886–2019, day-level precision (CC BY 4.0) — icr.ethz.ch/data/cshapes/
-- **aourednik/historical-basemaps**: –3000 to 2000 CE, snapshots (CC BY-SA 4.0)
+- **aourednik/historical-basemaps**: −123000 to 2010 CE, 51 snapshots (GPL v3) — github.com/aourednik/historical-basemaps
 - **Natural Earth**: contemporary base map (public domain) — naturalearthdata.com
 - **AWMC**: Greco-Roman antiquity (CC BY)
 

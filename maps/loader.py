@@ -24,6 +24,11 @@ def get_available_years() -> list[int] :
             print(f"Skipping file {map_file.name}: {e}")
 
     return sorted(year_list)
+
+def find_nearest_year(year: int, available: list[int]) -> int:
+    candidates = [y for y in available if y <= year]
+    return max(candidates) if candidates else available[0]
+    
 def load_geojson(path: Path) -> gpd.GeoDataFrame:
     full_path = DATA_DIR / path
     if not full_path.exists():

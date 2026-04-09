@@ -5,6 +5,73 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+// ---------------------------------------------------------------------------
+// Calendar panel helpers
+// ---------------------------------------------------------------------------
+
+const calendarPanel = document.getElementById('calendar-panel');
+
+// Show the calendar panel for the clicked country by calling the HTMX panel endpoint.
+// htmx.ajax() triggers an HTTP GET and swaps the HTML response into #calendar-panel.
+// This is the "HTML over the wire" pattern: Flask renders the UI, not this JS function.
+//
+// Guards (do nothing if):
+//   - feature has no ISO_A2 property  → historical layer (aourednik has no ISO codes)
+//   - ISO_A2 is unresolvable ("-99" with no EH fallback) → disputed territory
+//   - year < 1  → datetime.date does not support BCE dates
+function showCalendarPanel(feature, year) {
+    const props = feature.properties;
+
+    // Historical layers (aourednik/historical-basemaps) have no ISO_A2 field.
+    // Contemporary Natural Earth layer has ISO_A2 (sometimes "-99" for edge cases).
+    if (!props || props.ISO_A2 === undefined) return;
+
+    // Resolve ISO code: try ISO_A2, fall back to ISO_A2_EH (e.g. Norway, France
+    // overseas territories appear as "-99" in the 110m Natural Earth dataset).
+    let iso = props.ISO_A2;
+    if (iso === '-99') iso = props.ISO_A2_EH || '-99';
+    if (iso === '-99') {
+        // Disputed territory with no resolvable ISO code — show panel with no-data message.
+        calendarPanel.style.display = 'block';
+        calendarPanel.innerHTML = '<p class="error">No calendar data available for this territory.</p>';
+        return;
+    }
+
+    // Calendar API requires year >= 1 (Python datetime.date minimum is year 1 CE).
+    if (year < 1) return;
+
+    // Build date string: default to January 1st of the selected year.
+    // The slider provides year-level precision; Jan 1 is a safe, unambiguous default.
+    const dateStr = year + '-01-01';
+
+    // Pass the country display name as a query param so Flask can show it in the panel
+    // without a second lookup. encodeURIComponent handles names with spaces/accents.
+    const name    = encodeURIComponent(props.NAME || iso);
+    const url     = '/api/calendars/panel?date=' + dateStr + '&region=' + iso + '&name=' + name;
+
+    // Make the panel visible before the request completes so the user sees immediate feedback.
+    calendarPanel.style.display = 'block';
+
+    // htmx.ajax() sends the GET request and swaps the response HTML into #calendar-panel.
+    // 'innerHTML' replaces the panel content without removing the panel element itself.
+    htmx.ajax('GET', url, { target: '#calendar-panel', swap: 'innerHTML' });
+}
+
+// Called by Leaflet once per feature when addData() populates the layer.
+// Attaches the click handler that triggers the calendar panel.
+// onEachFeature is re-called for every feature on each updateBorders() call
+// (clearLayers + addData), so click handlers stay in sync after year changes.
+function onEachFeature(feature, layer) {
+    layer.on('click', function() {
+        const year = parseInt(document.getElementById('year-slider').value, 10);
+        showCalendarPanel(feature, year);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Borders layer
+// ---------------------------------------------------------------------------
+
 // Empty GeoJSON layer for borders, added to map immediately.
 // clearLayers() + addData() updates it in-place without re-creating the layer.
 const bordersLayer = L.geoJSON(null, {
@@ -13,7 +80,9 @@ const bordersLayer = L.geoJSON(null, {
         weight: 1,              // border stroke width in pixels
         fillColor: '#457b9d',   // polygon fill color
         fillOpacity: 0.2        // polygon fill transparency (0=invisible, 1=opaque)
-    }
+    },
+    // onEachFeature wires up the click → calendar panel for every feature loaded.
+    onEachFeature: onEachFeature
 }).addTo(map);
 
 // ---------------------------------------------------------------------------
@@ -67,6 +136,11 @@ slider.addEventListener('input', function() {
 
     // Update the label immediately so feedback is instant while dragging
     yearLabel.textContent = formatYear(year);
+
+    // Hide the calendar panel when the year changes — the displayed calendars
+    // must always correspond to the currently visible map snapshot.
+    calendarPanel.style.display = 'none';
+    calendarPanel.innerHTML     = '';
 
     // Cancel the previous pending request (if the user is still moving)
     clearTimeout(debounceTimer);

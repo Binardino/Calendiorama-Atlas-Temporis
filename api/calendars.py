@@ -80,22 +80,23 @@ def get_calendar_panel_endpoint():
     """
     region     = request.args.get('region')
     input_date = request.args.get('date', type=date.fromisoformat)
+    # name is passed by JS from feature.properties.NAME for display purposes.
+    # Falls back to the ISO code if absent.
+    name       = request.args.get('name', default=region)
 
     if not region or input_date is None:
-        # return HTML error message instead of JSON
-        # endpoint renders a template
         return '<p class="error">Missing date or region.</p>', 400
-    
+
     try:
         # Convert Gregorian date to Julian Day Number (universal calendar pivot).
         jdn = input_date.toordinal() + 1721425
         results = get_calendars(region, jdn)
 
-        return render_template('partials/calendar_panel.html', 
-                            region_name=region,
-                            date_str=input_date.isoformat(),
-                            results=results
-                            )
+        return render_template('partials/calendar_panel.html',
+                               region_name=name,
+                               date_str=input_date.isoformat(),
+                               results=results
+                               )
     except Exception as e:
         app.logger.error(f"ERROR getting calendar panel: {e}")
         return '<p class="error">Internal server error.</p>', 500

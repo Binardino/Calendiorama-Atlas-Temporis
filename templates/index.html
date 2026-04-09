@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Calendiorama Atlas Temporis</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
     <style>
         body { margin: 0; }
         #map { width: 100vw; height: 100vh; }
@@ -27,6 +28,23 @@
         }
         #year-label { min-width: 80px; text-align: center; font-weight: bold; }
         #year-slider { width: 420px; cursor: pointer; }
+
+        /* Calendar panel: absolute overlay top-right, hidden until a country is clicked */
+        #calendar-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 220px;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: sans-serif;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            display: none;   /* shown by JS after htmx.ajax() is called */
+        }
+
     </style>
 </head>
 <body>
@@ -38,6 +56,8 @@
         <input type="range" id="year-slider" min="-3000" max="2010" step="1" value="2010">
         <span id="year-label">2010 CE</span>
     </div>
+    <!-- HTMX swap target: receives HTML fragment from /api/calendars/panel -->
+    <div id="calendar-panel"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="/static/js/map.js"></script>
 </body>

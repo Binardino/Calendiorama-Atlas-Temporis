@@ -93,7 +93,9 @@ const bordersLayer = L.geoJSON(null, {
 // Called with no argument → /api/borders (contemporary Natural Earth data).
 // Called with a year    → /api/borders?year=<int> (historical snapshot).
 function updateBorders(year) {
-    const url = (year !== undefined) ? '/api/borders?year=' + year : '/api/borders';
+    // year > 2010: no historical snapshot exists → use contemporary Natural Earth
+    const url = (year !== undefined && year <= 2010) 
+    ? '/api/borders?year=' + year : '/api/borders';
     fetch(url)
         .then(function(response) { return response.json(); })
         .then(function(data) {
@@ -115,6 +117,7 @@ function updateBorders(year) {
 //   formatYear(0)     → "Year 0"
 //   formatYear(-500)  → "500 BCE"
 function formatYear(year) {
+    if (year > 2010) return 'Present';
     if (year > 0) return year + ' CE';
     if (year === 0) return 'Year 0';
     return Math.abs(year) + ' BCE';

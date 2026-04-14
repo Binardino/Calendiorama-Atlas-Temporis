@@ -87,9 +87,17 @@ Phases:
   - [x] `api/borders.py`: `GET /api/borders?year=<int>` with `query_string=True` cache
   - [x] `templates/index.html`: `<input type="range">` slider + year label
   - [x] `static/js/map.js`: slider event listener + `updateBorders(year)` + 300ms debounce
-- [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
-- [ ] Phase 5 — CShapes day-level precision data (1886+)
-- [ ] Phase 6 — Docker production deployment
+- [x] **Phase 4** — Calendar overlay on map + HTMX panel on country click
+  - [x] `calendars/dispatcher.py`: `_CALENDAR_PRIORITY` dict + `get_primary_calendar(region_id, jdn)` → `(key, CalendarDate)`
+  - [x] `api/calendars.py`: `GET /api/calendars/panel` (HTML fragment via HTMX) + `GET /api/calendars/overlay?year=<int>`
+  - [x] `templates/partials/calendar_panel.html`: Jinja2 fragment for HTMX injection
+  - [x] `static/js/map.js`: `CALENDAR_COLORS`, `labelsLayer`, `rebuildLabels()`, `updateCalendarOverlay()`, zoom handler, CartoDB Positron basemap
+  - [x] `templates/index.html`: calendar legend, `.calendar-label` CSS, `.cal-*` color classes, HTMX CDN
+  - [x] Key fix: `get_primary_calendar()` returns internal key (`hijri`) not display name (`Islamic`) — avoids JS name mapping
+  - [x] Labels hidden below zoom 4 to avoid overlap
+  - [x] Overlay only active for year > 2010 (Natural Earth has ISO_A2; aourednik does not)
+- [ ] **Phase 5** — CShapes day-level precision data (1886+)
+- [ ] **Phase 6** — Docker production deployment
 
 ## Historical Data Sources
 

@@ -100,6 +100,9 @@ let overlayData = null;
 function rebuildLabels() {
     labelsLayer.clearLayers();
     if (!overlayData) return;
+    // Below zoom 4 the world view is too small: labels overlap heavily.
+    // Clearing layers (above) hides them; they reappear when the user zooms in.
+    if (map.getZoom() < 4) return;
 
     // Scale font size with zoom level: small at zoom 2, larger as user zooms in.
     const zoom     = map.getZoom();

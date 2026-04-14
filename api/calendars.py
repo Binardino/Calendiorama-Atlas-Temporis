@@ -106,7 +106,33 @@ def get_calendar_panel_endpoint():
 @calendars_bp.route('/calendars/overlay')
 @cache.cached(timeout=3600, query_string=True)
 def get_calendar_overlay_endpoint():
-    """GET /api/calendars/overlay?year=YYYY"""
+    """
+    GET /api/calendars/overlay?year=YYYY
+
+    Returns the primary calendar date for every known region in a single request.
+    Used by the map overlay to color countries by calendar system and display
+    local date labels directly on the map.
+
+    Accepts a plain integer year instead of a full ISO date because:
+    - The timeline slider only provides a year (no month/day).
+    - Python's datetime.date does not support BCE years (≤ 0).
+    - convertdate.gregorian.to_jd() handles the full range including BCE.
+
+    JDN is computed for June 15 of the given year (mid-year representative).
+    This is a known approximation: see project memory for planned improvement
+    in Phase 5 when day-level precision becomes available.
+
+    Query params:
+        year (int) : Gregorian year, e.g. 2024, 1500, -500 (500 BCE)
+
+    Response (200): JSON object keyed by ISO 3166-1 alpha-2 region code
+        {
+            "FR": {"primary_calendar": "gregorian", "formatted": "2024-06-15"},
+            "IR": {"primary_calendar": "persian",   "formatted": "1403-03-25"},
+            ...
+        }
+    Response (400): JSON error — missing or invalid year parameter
+    """
     year = request.args.get('year', type=int)
 
     if year is None:
@@ -114,15 +140,20 @@ def get_calendar_overlay_endpoint():
                                   status=400,
                                   mimetype='application/json'
                                   )
-    
-    # Convert Gregorian date to Julian Day Number (universal calendar pivot).
-    jdn = int(gregorian.to_jd(year, 6, 15)) #wip - test hardcoded date
+
+    # Use June 15 as a mid-year representative date.
+    # TODO Phase 5: accept month + day params for day-level precision (CShapes data).
+    jdn = int(gregorian.to_jd(year, 6, 15))
 
     result = {}
     for region_id in _region_map:
+        # 'default' is a fallback key in the map, not a real region — skip it.
         if region_id == 'default':
             continue
         calendar = get_primary_calendar(region_id, jdn)
-        result[region_id] = {"primary_calendar": calendar.calendar_name, "formatted": calendar.formatted}
+        result[region_id] = {
+            "primary_calendar": calendar.calendar_name,
+            "formatted": calendar.formatted,
+        }
 
     return app.response_class(orjson.dumps(result), mimetype='application/json')

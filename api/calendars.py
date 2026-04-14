@@ -1,7 +1,8 @@
 from datetime import date
 from flask import Blueprint, request, render_template ,current_app as app
 from calendars import *
-from calendars.dispatcher import get_calendars
+from convertdate import gregorian
+from calendars.dispatcher import get_primary_calendar, _region_map, get_calendars
 import dataclasses
 import orjson
 from app import cache
@@ -100,4 +101,28 @@ def get_calendar_panel_endpoint():
     except Exception as e:
         app.logger.error(f"ERROR getting calendar panel: {e}")
         return '<p class="error">Internal server error.</p>', 500
-                
+
+
+@calendars_bp.route('/calendars/overlay')
+@cache.cached(timeout=3600, query_string=True)
+def get_calendar_overlay_endpoint():
+    """GET /api/calendars/overlay?year=YYYY"""
+    year = request.args.get('year', type=int)
+
+    if year is None:
+        return app.response_class(orjson.dumps({'error': 'Missing or invalid year'}),
+                                  status=400,
+                                  mimetype='application/json'
+                                  )
+    
+    # Convert Gregorian date to Julian Day Number (universal calendar pivot).
+    jdn = int(gregorian.to_jd(year, 6, 15)) #wip - test hardcoded date
+
+    result = {}
+    for region_id in _region_map:
+        if region_id == 'default':
+            continue
+        calendar = get_primary_calendar(region_id, jdn)
+        result[region_id] = {"primary_calendar": calendar.calendar_name, "formatted": calendar.formatted}
+
+    return app.response_class(orjson.dumps(result), mimetype='application/json')

@@ -5,7 +5,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 4: Calendar Labels Overlay
+## [Unreleased] — Phase 5: CShapes Integration (in progress)
+
+### Added
+- `scripts/generate_gwcode_iso.py`: one-shot script — spatial join CShapes capitals × Natural Earth + 33 manual overrides → `gwcode_iso.json`
+- `data/calendars/gwcode_iso.json`: mapping gwcode (int) → ISO alpha-2 for all 252 CShapes countries
+- `data/geojson/cshapes/`: CShapes 2.0 data (GeoJSON + Shapefile), gitignored — CC BY 4.0, ETH Zurich
+
+### Architecture
+- Three-source pipeline: aourednik (< 1886) / CShapes (1886–2019) / Natural Earth (> 2019)
+- Future snapshots before 1886: use aourednik format (one GeoJSON file per year, auto-detected by `get_available_years()`)
+- Future snapshots 1886–2019: extend CShapes rows with `gwsdate/gwedate` fields
+
+---
+
+## [0.4.0] — Phase 4: Calendar Overlay on Map
+
+---
+
+### Added
+- `calendars/dispatcher.py`: `_CALENDAR_PRIORITY` dict + `get_primary_calendar(region_id, jdn)` → `tuple[str, CalendarDate]` (internal key + date)
+- `api/calendars.py`: `GET /api/calendars/panel` (HTMX HTML fragment) + `GET /api/calendars/overlay?year=<int>` (JSON per-country calendar data)
+- `templates/partials/calendar_panel.html`: Jinja2 fragment injected by HTMX on country click
+- `static/js/map.js`: `CALENDAR_COLORS` dict, `labelsLayer` (L.layerGroup), `rebuildLabels()`, `updateCalendarOverlay()`, zoom handler, CartoDB Positron basemap
+- `templates/index.html`: calendar legend (8 systems), `.calendar-label` CSS with white text-shadow halo, `.cal-*` color classes, HTMX CDN
+
+### Changed
+- `static/js/map.js`: basemap switched from OSM to CartoDB Positron (better contrast for overlay colors)
+- `static/js/map.js`: `updateBorders()` chains `updateCalendarOverlay()` after `addData()`
+
+### Fixed
+- `templates/index.html`: missing `}` on `#calendar-panel` caused `.calendar-label` CSS to be nested inside (browser ignored all label styles)
+- `api/calendars.py`: `from convertdate import gregorian` (not `from calendars import gregorian`) — wrong module import
+- `calendars/dispatcher.py`: `get_primary_calendar()` now returns `(internal_key, CalendarDate)` tuple — avoids JS name-mismatch (`"Islamic"` vs `"hijri"`) that caused all countries to fall back to default blue
+
+### Key Notes
+- Calendar overlay active only for `year > 2010` (Natural Earth has `ISO_A2`; aourednik historical GeoJSON does not)
+- Labels hidden below zoom level 4 to avoid overlap at world view
+- `get_primary_calendar()` returns internal key (`hijri`, `persian`…) matching JS `CALENDAR_COLORS` dict, not display name (`Islamic`, `Persian`…)
+- Mid-year JDN: `gregorian.to_jd(year, 6, 15)` used as representative date — dynamic in Phase 5
 
 ---
 

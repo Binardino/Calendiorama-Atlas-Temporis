@@ -21,6 +21,28 @@ Interactive historical world map web application built entirely in Python (backe
 - When the developer is stuck, guide with hints before giving the solution
 - Keep explanations in **French** (developer's language), code and comments in **English**
 
+### Coding Guidelines (Karpathy Principles)
+
+**Think Before Coding** — Don't assume. Don't hide confusion. Surface tradeoffs.
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+
+**Simplicity First** — Minimum code that solves the problem. Nothing speculative.
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+**Surgical Changes** — Touch only what you must. Clean up only your own mess.
+- Don't "improve" adjacent code, comments, or formatting.
+- Match existing style, even if you'd do it differently.
+- Every changed line should trace directly to the user's request.
+
+**Goal-Driven Execution** — Define success criteria. Loop until verified.
+- Transform tasks into verifiable goals before starting.
+- For multi-step tasks, state a brief plan with explicit verification steps.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -113,6 +135,7 @@ Phases:
 3. **GeoJSON geometry simplification** — Mandatory: raw files are 20–50 MB; simplify server-side by zoom level
 4. **Integer year for BCE** — JS `Date` is unreliable before 100 CE; slider uses a plain integer
 5. **Hijri fallback** — `hijri-converter` (Umm al-Qura) covers only 1937–2077; use `convertdate.islamic` for older dates
+6. **Three-source pipeline** — aourednik (< 1886) / CShapes 1886–2019 / Natural Earth (> 2019). Future snapshots before 1886: aourednik format. Do not collapse sources.
 
 ## Running the Project
 
@@ -127,4 +150,3 @@ pytest
 # Production
 docker-compose up
 ```
-

@@ -123,7 +123,9 @@ def get_calendar_overlay_endpoint():
     in Phase 5 when day-level precision becomes available.
 
     Query params:
-        year (int) : Gregorian year, e.g. 2024, 1500, -500 (500 BCE)
+        year (int)  : Gregorian year, e.g. 2024, 1500, -500 (500 BCE)
+        month (int) : Month of the year, e.g. 1 (January) to 12 (December)
+        day (int)   : Day of the month, e.g. 1 to 31
 
     Response (200): JSON object keyed by ISO 3166-1 alpha-2 region code
         {
@@ -133,7 +135,9 @@ def get_calendar_overlay_endpoint():
         }
     Response (400): JSON error — missing or invalid year parameter
     """
-    year = request.args.get('year', type=int)
+    year  = request.args.get('year', type=int)
+    month = request.args.get('month', default=6, type=int)
+    day   = request.args.get('day', default=15, type=int)
 
     if year is None:
         return app.response_class(orjson.dumps({'error': 'Missing or invalid year'}),
@@ -141,9 +145,8 @@ def get_calendar_overlay_endpoint():
                                   mimetype='application/json'
                                   )
 
-    # Use June 15 as a mid-year representative date.
-    # TODO Phase 5: accept month + day params for day-level precision (CShapes data).
-    jdn = int(gregorian.to_jd(year, 6, 15))
+    # JDN computed for the requested date (defaults to June 15 if month/day not provided).
+    jdn = int(gregorian.to_jd(year, month, day))
 
     result = {}
     for region_id in _region_map:

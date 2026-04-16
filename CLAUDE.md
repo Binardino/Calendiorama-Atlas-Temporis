@@ -118,8 +118,17 @@ Phases:
   - [x] Key fix: `get_primary_calendar()` returns internal key (`hijri`) not display name (`Islamic`) — avoids JS name mapping
   - [x] Labels hidden below zoom 4 to avoid overlap
   - [x] Overlay only active for year > 2010 (Natural Earth has ISO_A2; aourednik does not)
-- [ ] **Phase 5** — CShapes day-level precision data (1886+)
+- [x] **Phase 5** — CShapes day-level precision data (1886+)
+  - [x] `scripts/generate_gwcode_iso.py` + `data/calendars/gwcode_iso.json` (252 entries, spatial join + 33 manual overrides)
+  - [x] `maps/loader.py`: `load_cshapes(target_date)` with date-range filter and gwcode→ISO mapping
+  - [x] `api/borders.py`: three-source routing (aourednik / CShapes / Natural Earth), `month`+`day` params
+  - [x] `api/calendars.py`: overlay accepts `month`+`day`, June 15 hardcode removed
+  - [x] `templates/index.html` + `static/js/map.js`: `<input type="date">`, bidirectional slider↔date sync, BCE label
 - [ ] **Phase 6** — Docker production deployment
+  - [ ] `Dockerfile`: multi-stage (Poetry builder → Gunicorn runtime)
+  - [ ] `docker-compose.yml`: web + redis + nginx
+  - [ ] `nginx/nginx.conf`: reverse proxy + static files
+  - [ ] `.env.example`: SECRET_KEY, REDIS_URL, FLASK_ENV
 
 ## Historical Data Sources
 

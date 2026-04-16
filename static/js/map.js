@@ -272,10 +272,10 @@ const dateInput = document.getElementById('date-input');
 // on every pixel of movement — we wait until the user pauses for 300ms.
 let debounceTimer = null;
 
-// Read current month/day from the date input, falling back to June 15 when
-// the input is empty (BCE mode: <input type="date"> disabled for year < 1).
+// Read current month/day from the date input.
+// Falls back to June 15 in BCE mode (type="text", value="BCE 432" — not a parseable date).
 function getCurrentMonthDay() {
-    if (dateInput.value) {
+    if (dateInput.type === 'date' && dateInput.value) {
         const parts = dateInput.value.split('-');
         return { month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
     }
@@ -289,12 +289,16 @@ slider.addEventListener('input', function() {
     // Update the label immediately so feedback is instant while dragging.
     yearLabel.textContent = formatYear(year);
 
-    // <input type="date"> does not support BCE years — disable it for year < 1.
     if (year < 1) {
-        dateInput.disabled = true;
-        dateInput.value    = '';
+        // <input type="date"> does not support BCE years.
+        // Switch to type="text" to display a readable label ("BCE 432") instead of an empty field.
+        dateInput.type     = 'text';
+        dateInput.value    = 'BCE ' + Math.abs(year);
+        dateInput.readOnly = true;
     } else {
-        dateInput.disabled = false;
+        // Restore type="date" when returning to CE years.
+        dateInput.type     = 'date';
+        dateInput.readOnly = false;
         // Update only the year part of the date input, preserving month and day.
         // padStart(4) required: <input type="date"> rejects years shorter than 4 digits.
         const { month, day } = getCurrentMonthDay();

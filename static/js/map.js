@@ -21,7 +21,7 @@ const calendarPanel = document.getElementById('calendar-panel');
 //   - feature has no ISO_A2 property  → historical layer (aourednik has no ISO codes)
 //   - ISO_A2 is unresolvable ("-99" with no EH fallback) → disputed territory
 //   - year < 1  → datetime.date does not support BCE dates
-function showCalendarPanel(feature, year) {
+function showCalendarPanel(feature, year, month, day) {
     const props = feature.properties;
 
     // Historical layers (aourednik/historical-basemaps) have no ISO_A2 field.
@@ -42,9 +42,11 @@ function showCalendarPanel(feature, year) {
     // Calendar API requires year >= 1 (Python datetime.date minimum is year 1 CE).
     if (year < 1) return;
 
-    // Build date string: default to January 1st of the selected year.
-    // The slider provides year-level precision; Jan 1 is a safe, unambiguous default.
-    const dateStr = year + '-01-01';
+    // Build ISO date string from the current year/month/day (from slider + date input).
+    // Zero-pad month and day so the date string is always valid (e.g. "1914-07-28").
+    const mm      = String(month).padStart(2, '0');
+    const dd      = String(day).padStart(2, '0');
+    const dateStr = year + '-' + mm + '-' + dd;
 
     // Pass the country display name as a query param so Flask can show it in the panel
     // without a second lookup. encodeURIComponent handles names with spaces/accents.
@@ -65,8 +67,12 @@ function showCalendarPanel(feature, year) {
 // (clearLayers + addData), so click handlers stay in sync after year changes.
 function onEachFeature(feature, layer) {
     layer.on('click', function() {
-        const year = parseInt(document.getElementById('year-slider').value, 10);
-        showCalendarPanel(feature, year);
+        const year  = parseInt(slider.value, 10);
+        // Read month/day from the date input; fall back to June 15 if input is empty (BCE mode).
+        const parts = dateInput.value ? dateInput.value.split('-') : [year, 6, 15];
+        const month = parseInt(parts[1], 10);
+        const day   = parseInt(parts[2], 10);
+        showCalendarPanel(feature, year, month, day);
     });
 }
 
@@ -146,7 +152,7 @@ function rebuildLabels() {
 // Fetch calendar overlay data and apply colors + labels to the borders layer.
 // Only meaningful for year > 2010: aourednik historical features have no ISO_A2,
 // so calendar mapping is impossible. Historical years reset to default style.
-function updateCalendarOverlay(year) {
+function updateCalendarOverlay(year, month, day) {
     if (year <= 2010) {
         // Reset fill to default blue and hide all labels.
         bordersLayer.setStyle({ fillColor: '#457b9d', fillOpacity: 0.2 });
@@ -155,7 +161,8 @@ function updateCalendarOverlay(year) {
         return;
     }
 
-    fetch('/api/calendars/overlay?year=' + year)
+    // Pass month and day so the overlay reflects the exact selected date, not June 15.
+    fetch('/api/calendars/overlay?year=' + year + '&month=' + month + '&day=' + day)
         .then(function(response) { return response.json(); })
         .then(function(data) {
             overlayData = data;
@@ -210,13 +217,17 @@ const bordersLayer = L.geoJSON(null, {
 // API call
 // ---------------------------------------------------------------------------
 
-// Fetch borders from the API for a given year (integer) and update the map layer.
-// Called with no argument → /api/borders (contemporary Natural Earth data).
-// Called with a year    → /api/borders?year=<int> (historical snapshot).
-function updateBorders(year) {
-    // year > 2010: no historical snapshot exists → use contemporary Natural Earth
-    const url = (year !== undefined && year <= 2010)
-    ? '/api/borders?year=' + year : '/api/borders';
+// Fetch borders from the API for the given date and update the map layer.
+// year/month/day map to the three-source pipeline in api/borders.py:
+//   year > 2019 or absent → Natural Earth, year 1886-2019 → CShapes, year < 1886 → aourednik.
+// month and day are only meaningful for the CShapes range (1886-2019).
+function updateBorders(year, month, day) {
+    let url;
+    if (year === undefined || year > 2019) {
+        url = '/api/borders';
+    } else {
+        url = '/api/borders?year=' + year + '&month=' + month + '&day=' + day;
+    }
     fetch(url)
         .then(function(response) { return response.json(); })
         .then(function(data) {
@@ -224,7 +235,8 @@ function updateBorders(year) {
             bordersLayer.addData(data);
             // Calendar overlay runs after borders are loaded: rebuildLabels() iterates
             // bordersLayer.eachLayer(), so features must exist before it is called.
-            updateCalendarOverlay(year !== undefined ? year : parseInt(slider.value, 10));
+            const y = year !== undefined ? year : parseInt(slider.value, 10);
+            updateCalendarOverlay(y, month, day);
         })
         .catch(function(err) {
             console.error('Failed to load borders:', err);
@@ -253,28 +265,75 @@ function formatYear(year) {
 
 const slider    = document.getElementById('year-slider');
 const yearLabel = document.getElementById('year-label');
+const dateInput = document.getElementById('date-input');
 
 // Debounce timer handle. Reused on every slider move to avoid firing the API
 // on every pixel of movement — we wait until the user pauses for 300ms.
 let debounceTimer = null;
 
+// Read current month/day from the date input, falling back to June 15 when
+// the input is empty (BCE mode: <input type="date"> disabled for year < 1).
+function getCurrentMonthDay() {
+    if (dateInput.value) {
+        const parts = dateInput.value.split('-');
+        return { month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) };
+    }
+    return { month: 6, day: 15 };
+}
+
+// Slider moved → sync date input year, keep current month/day, trigger API.
 slider.addEventListener('input', function() {
     const year = parseInt(this.value, 10);
 
-    // Update the label immediately so feedback is instant while dragging
+    // Update the label immediately so feedback is instant while dragging.
     yearLabel.textContent = formatYear(year);
 
-    // Hide the calendar panel when the year changes — the displayed calendars
-    // must always correspond to the currently visible map snapshot.
+    // <input type="date"> does not support BCE years — disable it for year < 1.
+    if (year < 1) {
+        dateInput.disabled = true;
+        dateInput.value    = '';
+    } else {
+        dateInput.disabled = false;
+        // Update only the year part of the date input, preserving month and day.
+        const { month, day } = getCurrentMonthDay();
+        const mm = String(month).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        dateInput.value = year + '-' + mm + '-' + dd;
+    }
+
+    // Hide the calendar panel when the date changes — displayed calendars must
+    // always correspond to the currently visible map snapshot.
     calendarPanel.style.display = 'none';
     calendarPanel.innerHTML     = '';
 
-    // Cancel the previous pending request (if the user is still moving)
+    // Cancel the previous pending request (if the user is still moving).
     clearTimeout(debounceTimer);
 
-    // Schedule the API call 300ms after the last movement
+    // Schedule the API call 300ms after the last movement.
     debounceTimer = setTimeout(function() {
-        updateBorders(year);
+        const { month, day } = getCurrentMonthDay();
+        updateBorders(year, month, day);
+    }, 300);
+});
+
+// Date input changed → sync slider to the new year, trigger API.
+dateInput.addEventListener('change', function() {
+    if (!this.value) return;
+    const parts = this.value.split('-');
+    const year  = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day   = parseInt(parts[2], 10);
+
+    // Clamp year to slider range and sync.
+    slider.value          = Math.min(Math.max(year, -3000), 2100);
+    yearLabel.textContent = formatYear(year);
+
+    calendarPanel.style.display = 'none';
+    calendarPanel.innerHTML     = '';
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+        updateBorders(year, month, day);
     }, 300);
 });
 
@@ -283,4 +342,6 @@ slider.addEventListener('input', function() {
 // ---------------------------------------------------------------------------
 
 // Load the snapshot matching the slider's default value on page load.
-updateBorders(parseInt(slider.value, 10));
+// Read month/day from the date input default value ("2010-06-15").
+const _init = getCurrentMonthDay();
+updateBorders(parseInt(slider.value, 10), _init.month, _init.day);

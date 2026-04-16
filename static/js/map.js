@@ -43,10 +43,11 @@ function showCalendarPanel(feature, year, month, day) {
     if (year < 1) return;
 
     // Build ISO date string from the current year/month/day (from slider + date input).
-    // Zero-pad month and day so the date string is always valid (e.g. "1914-07-28").
+    // padStart(4) on year: Python's date.fromisoformat() also requires 4-digit years.
+    const yyyy    = String(year).padStart(4, '0');
     const mm      = String(month).padStart(2, '0');
     const dd      = String(day).padStart(2, '0');
-    const dateStr = year + '-' + mm + '-' + dd;
+    const dateStr = yyyy + '-' + mm + '-' + dd;
 
     // Pass the country display name as a query param so Flask can show it in the panel
     // without a second lookup. encodeURIComponent handles names with spaces/accents.
@@ -295,10 +296,12 @@ slider.addEventListener('input', function() {
     } else {
         dateInput.disabled = false;
         // Update only the year part of the date input, preserving month and day.
+        // padStart(4) required: <input type="date"> rejects years shorter than 4 digits.
         const { month, day } = getCurrentMonthDay();
-        const mm = String(month).padStart(2, '0');
-        const dd = String(day).padStart(2, '0');
-        dateInput.value = year + '-' + mm + '-' + dd;
+        const yyyy = String(year).padStart(4, '0');
+        const mm   = String(month).padStart(2, '0');
+        const dd   = String(day).padStart(2, '0');
+        dateInput.value = yyyy + '-' + mm + '-' + dd;
     }
 
     // Hide the calendar panel when the date changes — displayed calendars must

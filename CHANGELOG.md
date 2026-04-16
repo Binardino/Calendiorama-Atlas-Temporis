@@ -5,17 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 5: CShapes Integration (in progress)
+## [Unreleased] — Phase 6: Docker Production Deployment
+
+---
+
+## [0.5.0] — Phase 5: CShapes Integration
 
 ### Added
 - `scripts/generate_gwcode_iso.py`: one-shot script — spatial join CShapes capitals × Natural Earth + 33 manual overrides → `gwcode_iso.json`
 - `data/calendars/gwcode_iso.json`: mapping gwcode (int) → ISO alpha-2 for all 252 CShapes countries
 - `data/geojson/cshapes/`: CShapes 2.0 data (GeoJSON + Shapefile), gitignored — CC BY 4.0, ETH Zurich
+- `maps/loader.py`: `load_cshapes(target_date)` — filters CShapes by date-range (gwsyear/gwsmonth/gwsday fields), adds ISO_A2 from gwcode_iso.json
+- `templates/index.html`: `<input type="date" id="date-input">` alongside the year slider
+- `static/js/map.js`: `updateBorders(year, month, day)`, `updateCalendarOverlay(year, month, day)`, bidirectional slider↔date sync, BCE label via type="text" switch
+
+### Changed
+- `api/borders.py`: three-source routing — aourednik (< 1886) / CShapes (1886–2019) / Natural Earth (> 2019); added `month` and `day` query params (default June 15)
+- `api/calendars.py`: `/calendars/overlay` accepts `month` and `day` params; June 15 hardcode removed
+
+### Fixed
+- `static/js/map.js`: year zero-padded to 4 digits for `<input type="date">` (browser rejects years < 4 digits)
+- `static/js/map.js`: BCE years switch input to `type="text"` and display "BCE N" instead of empty placeholder
 
 ### Architecture
 - Three-source pipeline: aourednik (< 1886) / CShapes (1886–2019) / Natural Earth (> 2019)
 - Future snapshots before 1886: use aourednik format (one GeoJSON file per year, auto-detected by `get_available_years()`)
-- Future snapshots 1886–2019: extend CShapes rows with `gwsdate/gwedate` fields
+- CShapes gwcode↔ISO mapping: 226/252 via spatial join, 33 manual overrides for small islands and NE "-99" territories
 
 ---
 

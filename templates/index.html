@@ -111,10 +111,12 @@
     <div id="map"></div>
     <!-- HTMX swap target: receives HTML fragment from /api/calendars/panel on country click -->
     <div id="calendar-panel"></div>
-    <!-- Timeline slider: integer years, negative = BCE. No JS Date object used (unreliable pre-100 CE) -->
+    <!-- Timeline controls: slider for year-level navigation + date input for day-level precision -->
+    <!-- Note: <input type="date"> does not support BCE years — disabled by JS when year < 1 -->
     <div id="timeline">
         <span>Year</span>
         <input type="range" id="year-slider" min="-3000" max="2100" step="1" value="2010">
+        <input type="date" id="date-input" value="2010-06-15" title="Enter a precise date (CE years only)">
         <span id="year-label">2010 CE</span>
     </div>
     <!-- Calendar legend: swatch colors match CALENDAR_COLORS in map.js -->

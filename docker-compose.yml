@@ -1,0 +1,49 @@
+services:
+
+  # ---------------------------------------------------------------------------
+  # Redis — production cache backend
+  # Replaces SimpleCache (dev) with a persistent, multi-worker-safe store.
+  # Flask-caching connects via REDIS_URL from .env (redis://redis:6379/0).
+  # Port 6379 is internal only — not exposed to the host.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # web — Flask application served by Gunicorn
+  # Built from the multi-stage Dockerfile at the project root.
+  # Loads SECRET_KEY, REDIS_URL, FLASK_ENV from .env (never committed).
+  # Large gitignored data directories are mounted read-only from the host
+  # instead of being baked into the image.
+  # Port 8000 is internal only — Nginx proxies to it, not the host directly.
+  # ---------------------------------------------------------------------------
+  web:
+    build: .
+    env_file: .env
+    volumes:
+      # aourednik historical snapshots — gitignored, GPL v3, too large for image
+      - ./data/geojson/historical:/app/data/geojson/historical:ro
+      # CShapes 2.0 shapefile — gitignored, CC BY 4.0, too large for image
+      - ./data/geojson/cshapes:/app/data/geojson/cshapes:ro
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # nginx — reverse proxy + static file server
+  # Serves /static/ directly from disk (no round-trip to Gunicorn for JS/CSS).
+  # Proxies all other requests to web:8000.
+  # Only service that exposes a port to the outside world (80).
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Nginx serves static files directly — bypasses Gunicorn entirely
+      - ./static:/app/static:ro
+    depends_on:
+      - web
+    restart: unless-stopped

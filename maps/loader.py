@@ -1,10 +1,16 @@
 from pathlib import Path
 import geopandas as gpd
+import json
+from datetime import date
 
 # Absolute path to data/geojson/, resolved from this file's location.
 # Using __file__ avoids CWD-dependent relative paths that break under pytest.
 DATA_DIR = Path(__file__).parent.parent / "data" / "geojson"
 
+_GWCODE_ISO_PATH = Path(__file__).parent.parent / "data" / "calendars" / "gwcode_iso.json"
+
+with _GWCODE_ISO_PATH.open() as f:
+    _GWCODE_ISO: dict[str, str] = json.load(f)
 
 def get_available_years() -> list[int]:
     """
@@ -74,3 +80,39 @@ def load_geojson(path: Path) -> gpd.GeoDataFrame:
     if not full_path.exists():
         raise FileNotFoundError(f"File {full_path} does not exist.")
     return gpd.read_file(full_path)
+
+def load_cshapes(target_date: date) -> gpd.GeoDataFrame:
+    """
+    Load CShapes 2.0 shapefile and return only the features active on target_date.
+
+    CShapes stores one row per country per stable-border period, with integer
+    start/end fields (gwsyear/gwsmonth/gwsday, gweyear/gwemonth/gweday).
+    A row is active when: start <= target_date <= end.
+
+    ISO_A2 is added via the module-level _GWCODE_ISO mapping (gwcode → ISO alpha-2).
+
+    Args:
+        target_date: The date to filter on.
+
+    Returns:
+        GeoDataFrame with columns: gwcode, cntry_name, ISO_A2, geometry.
+    """
+    cshapes = gpd.read_file(DATA_DIR / "cshapes" / "shapefile")
+
+    year, month, day = target_date.year, target_date.month, target_date.day
+
+    # Row is active if start date <= target_date (lexicographic tuple logic on year/month/day)
+    after_start = (cshapes['gwsyear'] < year) | \
+                  ((cshapes['gwsyear'] == year) & (cshapes['gwsmonth'] < month)) | \
+                  ((cshapes['gwsyear'] == year) & (cshapes['gwsmonth'] == month) & (cshapes['gwsday'] <= day))
+
+    # Row is active if end date >= target_date
+    before_end = (cshapes['gweyear'] > year) | \
+                 ((cshapes['gweyear'] == year) & (cshapes['gwemonth'] > month)) | \
+                 ((cshapes['gweyear'] == year) & (cshapes['gwemonth'] == month) & (cshapes['gweday'] >= day))
+
+    # .copy() avoids SettingWithCopyWarning when adding ISO_A2 to the slice
+    filtered = cshapes[after_start & before_end].copy()
+    filtered['ISO_A2'] = filtered['gwcode'].astype(str).map(_GWCODE_ISO)
+
+    return filtered[['gwcode', 'cntry_name', 'ISO_A2', 'geometry']]

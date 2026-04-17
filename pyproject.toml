@@ -20,6 +20,7 @@ dependencies = [
     "hijridate (>=2.3)",
     "jdatetime (>=4.1)",
     "pyluach (>=1.2)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
 ]
 
 

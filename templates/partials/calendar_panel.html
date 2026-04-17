@@ -1,0 +1,27 @@
+<!--
+    Partial template — injected into #calendar-panel by HTMX on country click.
+    No <html>/<head>/<body> tags: this is a fragment, not a standalone page.
+
+    Variables received from Flask (api/calendars.py → /api/calendars/panel):
+        region_name (str)        : display name of the clicked country, e.g. "France"
+        date_str    (str)        : ISO date string used for conversion, e.g. "2024-01-01"
+        results     (list)       : list of CalendarDate dataclass instances
+                                   each has .calendar_name (str) and .formatted (str)
+
+    results is empty only if the ISO code was not found AND the default fallback failed,
+    which should not happen in practice (dispatcher always falls back to ["gregorian"]).
+-->
+{% if results %}
+    <!-- Header: country name and reference date -->
+    <div>{{ region_name }} — {{ date_str }}</div>
+
+    <!-- One list item per applicable calendar for this region -->
+    <ul>
+    {% for r in results %}
+        <li>{{ r.calendar_name }}: {{ r.formatted }}</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <!-- Shown when no ISO code could be resolved (e.g. disputed territories) -->
+    <p>No calendar data available.</p>
+{% endif %}

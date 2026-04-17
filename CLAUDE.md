@@ -21,6 +21,28 @@ Interactive historical world map web application built entirely in Python (backe
 - When the developer is stuck, guide with hints before giving the solution
 - Keep explanations in **French** (developer's language), code and comments in **English**
 
+### Coding Guidelines (Karpathy Principles)
+
+**Think Before Coding** — Don't assume. Don't hide confusion. Surface tradeoffs.
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+
+**Simplicity First** — Minimum code that solves the problem. Nothing speculative.
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+**Surgical Changes** — Touch only what you must. Clean up only your own mess.
+- Don't "improve" adjacent code, comments, or formatting.
+- Match existing style, even if you'd do it differently.
+- Every changed line should trace directly to the user's request.
+
+**Goal-Driven Execution** — Define success criteria. Loop until verified.
+- Transform tasks into verifiable goals before starting.
+- For multi-step tasks, state a brief plan with explicit verification steps.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -87,9 +109,26 @@ Phases:
   - [x] `api/borders.py`: `GET /api/borders?year=<int>` with `query_string=True` cache
   - [x] `templates/index.html`: `<input type="range">` slider + year label
   - [x] `static/js/map.js`: slider event listener + `updateBorders(year)` + 300ms debounce
-- [ ] Phase 4 — Calendar labels overlay on map, learn HTMX
-- [ ] Phase 5 — CShapes day-level precision data (1886+)
-- [ ] Phase 6 — Docker production deployment
+- [x] **Phase 4** — Calendar overlay on map + HTMX panel on country click
+  - [x] `calendars/dispatcher.py`: `_CALENDAR_PRIORITY` dict + `get_primary_calendar(region_id, jdn)` → `(key, CalendarDate)`
+  - [x] `api/calendars.py`: `GET /api/calendars/panel` (HTML fragment via HTMX) + `GET /api/calendars/overlay?year=<int>`
+  - [x] `templates/partials/calendar_panel.html`: Jinja2 fragment for HTMX injection
+  - [x] `static/js/map.js`: `CALENDAR_COLORS`, `labelsLayer`, `rebuildLabels()`, `updateCalendarOverlay()`, zoom handler, CartoDB Positron basemap
+  - [x] `templates/index.html`: calendar legend, `.calendar-label` CSS, `.cal-*` color classes, HTMX CDN
+  - [x] Key fix: `get_primary_calendar()` returns internal key (`hijri`) not display name (`Islamic`) — avoids JS name mapping
+  - [x] Labels hidden below zoom 4 to avoid overlap
+  - [x] Overlay only active for year > 2010 (Natural Earth has ISO_A2; aourednik does not)
+- [x] **Phase 5** — CShapes day-level precision data (1886+)
+  - [x] `scripts/generate_gwcode_iso.py` + `data/calendars/gwcode_iso.json` (252 entries, spatial join + 33 manual overrides)
+  - [x] `maps/loader.py`: `load_cshapes(target_date)` with date-range filter and gwcode→ISO mapping
+  - [x] `api/borders.py`: three-source routing (aourednik / CShapes / Natural Earth), `month`+`day` params
+  - [x] `api/calendars.py`: overlay accepts `month`+`day`, June 15 hardcode removed
+  - [x] `templates/index.html` + `static/js/map.js`: `<input type="date">`, bidirectional slider↔date sync, BCE label
+- [ ] **Phase 6** — Docker production deployment
+  - [ ] `Dockerfile`: multi-stage (Poetry builder → Gunicorn runtime)
+  - [ ] `docker-compose.yml`: web + redis + nginx
+  - [ ] `nginx/nginx.conf`: reverse proxy + static files
+  - [ ] `.env.example`: SECRET_KEY, REDIS_URL, FLASK_ENV
 
 ## Historical Data Sources
 
@@ -105,6 +144,7 @@ Phases:
 3. **GeoJSON geometry simplification** — Mandatory: raw files are 20–50 MB; simplify server-side by zoom level
 4. **Integer year for BCE** — JS `Date` is unreliable before 100 CE; slider uses a plain integer
 5. **Hijri fallback** — `hijri-converter` (Umm al-Qura) covers only 1937–2077; use `convertdate.islamic` for older dates
+6. **Three-source pipeline** — aourednik (< 1886) / CShapes 1886–2019 / Natural Earth (> 2019). Future snapshots before 1886: aourednik format. Do not collapse sources.
 
 ## Running the Project
 
@@ -119,4 +159,3 @@ pytest
 # Production
 docker-compose up
 ```
-

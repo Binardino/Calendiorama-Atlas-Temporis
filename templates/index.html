@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Calendiorama Atlas Temporis</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
     <style>
         body { margin: 0; }
         #map { width: 100vw; height: 100vh; }
@@ -27,16 +28,108 @@
         }
         #year-label { min-width: 80px; text-align: center; font-weight: bold; }
         #year-slider { width: 420px; cursor: pointer; }
+
+        /* Calendar panel: absolute overlay top-right, hidden until a country is clicked */
+        #calendar-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 220px;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: sans-serif;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            display: none;   /* shown by JS after htmx.ajax() is called */
+        }
+
+        /* Calendar labels rendered by L.divIcon markers — placed on each country polygon */
+        .calendar-label {
+            white-space: nowrap;
+            font-family: sans-serif;
+            font-weight: 600;
+            /* 4-direction white halo: readable on any fill color without an opaque box */
+            text-shadow: 0 1px 2px rgba(255,255,255,0.85),
+                        0 -1px 2px rgba(255,255,255,0.85),
+                        1px 0 2px rgba(255,255,255,0.85),
+                        -1px 0 2px rgba(255,255,255,0.85);
+            pointer-events: none;   /* clicks pass through to the polygon below */
+            user-select: none;
+            transform: translateX(-50%);
+            display: inline-block;
+        }
+        /* One class per calendar system — matches CALENDAR_COLORS in map.js */
+        .cal-gregorian { color: #1a5fa8; }
+        .cal-hijri     { color: #8a3e00; }
+        .cal-persian   { color: #5a1a8a; }
+        .cal-hebrew    { color: #7a6000; }
+        .cal-japanese  { color: #7a1040; }
+        .cal-coptic    { color: #0a5a50; }
+        .cal-ethiopian { color: #0a1f40; }
+
+        /* Legend: bottom-left overlay, always visible, lists calendar → color mapping */
+        #legend {
+            position: absolute;
+            bottom: 90px;           /* above the timeline bar */
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: sans-serif;
+            font-size: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            line-height: 1.8;
+        }
+        #legend h4 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #444;
+        }
+        /* Each legend row: colored square + calendar name side by side */
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+
     </style>
 </head>
 <body>
     <div id="map"></div>
-
-    <!-- Timeline slider: integer years, negative = BCE. No JS Date object used (unreliable pre-100 CE) -->
+    <!-- HTMX swap target: receives HTML fragment from /api/calendars/panel on country click -->
+    <div id="calendar-panel"></div>
+    <!-- Timeline controls: slider for year-level navigation + date input for day-level precision -->
+    <!-- Note: <input type="date"> does not support BCE years — disabled by JS when year < 1 -->
     <div id="timeline">
         <span>Year</span>
-        <input type="range" id="year-slider" min="-3000" max="2010" step="1" value="2010">
+        <input type="range" id="year-slider" min="-3000" max="2100" step="1" value="2010">
+        <input type="date" id="date-input" value="2010-06-15" title="Enter a precise date (CE years only)">
         <span id="year-label">2010 CE</span>
+    </div>
+    <!-- Calendar legend: swatch colors match CALENDAR_COLORS in map.js -->
+    <div id="legend">
+        <h4>Calendar</h4>
+        <div class="legend-row"><span class="legend-swatch" style="background:#5b9bd5"></span> Gregorian</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#7ec8e3"></span> Julian</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#e8902a"></span> Hijri (Islamic)</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#9b59b6"></span> Persian</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#d4ac0d"></span> Hebrew</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#e74c8c"></span> Japanese</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#27ae60"></span> Coptic</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#1a5276"></span> Ethiopian</div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="/static/js/map.js"></script>

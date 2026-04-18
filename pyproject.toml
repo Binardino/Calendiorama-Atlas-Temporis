@@ -21,6 +21,8 @@ dependencies = [
     "jdatetime (>=4.1)",
     "pyluach (>=1.2)",
     "python-dotenv (>=1.2.2,<2.0.0)",
+    "gunicorn (>=22.0,<24.0)",
+    "redis (>=5.0,<6.0)",
 ]
 
 

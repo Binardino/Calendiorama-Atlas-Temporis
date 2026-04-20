@@ -9,25 +9,130 @@
         body { margin: 0; }
         #map { width: 100vw; height: 100vh; }
 
-        /* Timeline bar: absolute overlay at the bottom center, above Leaflet layers */
-        #timeline {
+        /* Outer wrapper: anchored bottom-center, stacks date input above slider bar */
+        #timeline-wrapper {
             position: absolute;
-            bottom: 30px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.88);
-            padding: 8px 20px;
-            border-radius: 8px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 6px;
             font-family: sans-serif;
-            font-size: 14px;
+        }
+
+        /* Date input above the bar: compact, readable */
+        #timeline-wrapper input[type="date"],
+        #timeline-wrapper input[type="text"] {
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.92);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* The bar itself: relative so ticks + tooltip can be absolutely positioned inside.
+           padding-top makes room for the tick labels that overflow upward. */
+        #timeline {
+            position: relative;
+            width: 80vw;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 36px 20px 12px;
+            border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         }
-        #year-label { min-width: 80px; text-align: center; font-weight: bold; }
-        #year-slider { width: 420px; cursor: pointer; }
+
+        /* Slider: full width of the bar, thicker track and larger thumb */
+        #year-slider {
+            width: 100%;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #b0c4de;
+            outline: none;
+        }
+        /* Thumb — the draggable handle */
+        #year-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2c5f8a;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        #year-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2c5f8a;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        /* Tick container: absolute, spans the full slider area inside the bar.
+           Ticks are positioned by JS using left% calculated from year value. */
+        #ticks {
+            position: absolute;
+            top: 6px;
+            left: 20px;
+            right: 20px;
+            height: 28px;
+            pointer-events: none;
+        }
+        /* Each tick mark: a vertical line + optional label above */
+        .tick {
+            position: absolute;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .tick-line {
+            width: 1px;
+            background: rgba(0,0,0,0.25);
+        }
+        .tick-line.major { height: 10px; background: rgba(0,0,0,0.5); }
+        .tick-line.minor { height: 6px; }
+        .tick-label {
+            font-size: 10px;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        /* Year tooltip: follows the slider thumb, shows current year above it.
+           Left position updated by JS on every slider input event. */
+        #year-tooltip {
+            position: absolute;
+            top: 14px;
+            transform: translateX(-50%);
+            background: #2c5f8a;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        /* Small triangle pointing down toward the slider thumb */
+        #year-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #2c5f8a;
+        }
 
         /* Calendar panel: absolute overlay top-right, hidden until a country is clicked */
         #calendar-panel {
@@ -109,15 +214,21 @@
 </head>
 <body>
     <div id="map"></div>
+
     <!-- HTMX swap target: receives HTML fragment from /api/calendars/panel on country click -->
     <div id="calendar-panel"></div>
-    <!-- Timeline controls: slider for year-level navigation + date input for day-level precision -->
-    <!-- Note: <input type="date"> does not support BCE years — disabled by JS when year < 1 -->
-    <div id="timeline">
-        <span>Year</span>
-        <input type="range" id="year-slider" min="-3000" max="2100" step="1" value="2010">
+
+    <!-- Timeline: date input above + slider bar below.
+         Note: <input type="date"> does not support BCE years — JS switches it to type="text" when year < 1. -->
+    <div id="timeline-wrapper">
         <input type="date" id="date-input" value="2010-06-15" title="Enter a precise date (CE years only)">
-        <span id="year-label">2010 CE</span>
+        <div id="timeline">
+            <!-- Tick marks (centuries + BCE millennia) injected by buildTicks() in map.js -->
+            <div id="ticks"></div>
+            <!-- Year label that follows the slider thumb — positioned by JS on every input event -->
+            <div id="year-tooltip">2010 CE</div>
+            <input type="range" id="year-slider" min="-3000" max="2100" step="1" value="2010">
+        </div>
     </div>
     <!-- Calendar legend: swatch colors match CALENDAR_COLORS in map.js -->
     <div id="legend">

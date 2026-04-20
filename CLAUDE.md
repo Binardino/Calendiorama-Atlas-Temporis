@@ -124,11 +124,16 @@ Phases:
   - [x] `api/borders.py`: three-source routing (aourednik / CShapes / Natural Earth), `month`+`day` params
   - [x] `api/calendars.py`: overlay accepts `month`+`day`, June 15 hardcode removed
   - [x] `templates/index.html` + `static/js/map.js`: `<input type="date">`, bidirectional slider↔date sync, BCE label
-- [ ] **Phase 6** — Docker production deployment
-  - [ ] `Dockerfile`: multi-stage (Poetry builder → Gunicorn runtime)
-  - [ ] `docker-compose.yml`: web + redis + nginx
-  - [ ] `nginx/nginx.conf`: reverse proxy + static files
-  - [ ] `.env.example`: SECRET_KEY, REDIS_URL, FLASK_ENV
+- [x] **Phase 6** — Docker production deployment
+  - [x] `Dockerfile`: multi-stage (Poetry builder → Gunicorn runtime)
+  - [x] `docker-compose.yml`: web + redis + nginx
+  - [x] `nginx/nginx.conf`: reverse proxy + static files
+  - [x] `.env.example`: SECRET_KEY, REDIS_URL, FLASK_ENV
+  - [x] `.dockerignore`: excludes historical GeoJSON, CShapes, tests, .git from build context
+- [ ] **Phase 7** — UX improvements
+  - [x] `templates/index.html` + `static/js/map.js`: wider timeline bar, century/millennium tick marks, year tooltip on slider thumb
+  - [x] Calendar legend moved to top-left (below zoom controls)
+  - [ ] Dark/light mode toggle (top-right button, CSS variables)
 
 ## Historical Data Sources
 

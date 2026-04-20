@@ -5,7 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 6: Docker Production Deployment
+## [Unreleased] — Phase 7: UX Improvements
+
+### Changed
+- `templates/index.html`: timeline restructured — `#timeline-wrapper` (flex column), `#ticks` (JS-generated markers), `#year-tooltip` (follows slider thumb); calendar legend moved to top-left below zoom controls
+- `static/js/map.js`: `buildTicks()` generates BCE millennium + CE century markers; `updateTooltip()` positions year badge above slider thumb with thumb-width correction; `yearLabel` → `yearTooltip`
+
+---
+
+## [0.6.0] — Phase 6: Docker Production Deployment
+
+### Added
+- `Dockerfile`: multi-stage build — Poetry builder stage + Gunicorn runtime stage
+- `docker-compose.yml`: three services (web, redis:7-alpine, nginx:alpine) with read-only volume mounts for gitignored data
+- `nginx/nginx.conf`: reverse proxy to Gunicorn, serves `/static/` directly with 1h cache
+- `.env.example`: template for `SECRET_KEY`, `REDIS_URL`, `FLASK_ENV`
+- `.dockerignore`: excludes historical GeoJSON, CShapes, tests, `.git`, `.venv` from build context
 
 ---
 

@@ -314,6 +314,8 @@ function buildTicks() {
         const el      = document.createElement('div');
         el.className  = 'tick';
         el.style.left = percent + '%';
+        // First tick sits at left:0% — override centering transform so label isn't clipped.
+        if (year === SLIDER_MIN) el.style.transform = 'translateX(0)';
         if (major) {
             // Label above + longer line below
             const label     = document.createElement('span');

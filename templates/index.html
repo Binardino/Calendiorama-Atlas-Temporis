@@ -174,11 +174,12 @@
         .cal-coptic    { color: #0a5a50; }
         .cal-ethiopian { color: #0a1f40; }
 
-        /* Legend: bottom-left overlay, always visible, lists calendar → color mapping */
+        /* Legend: top-left, below Leaflet zoom controls (~60px tall at top: 10px).
+           Kept away from the timeline (bottom) and calendar panel (top-right). */
         #legend {
             position: absolute;
-            bottom: 90px;           /* above the timeline bar */
-            left: 20px;
+            top: 80px;
+            left: 10px;
             z-index: 1000;
             background: rgba(255, 255, 255, 0.92);
             border-radius: 8px;

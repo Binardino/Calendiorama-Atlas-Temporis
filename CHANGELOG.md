@@ -7,9 +7,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased] — Phase 7: UX Improvements
 
+### Added
+- `static/css/style.css`: all CSS extracted from inline `<style>` in `index.html` → external file served by Nginx cache
+- Dark/light mode toggle: `#theme-toggle` button (top-left, next to zoom controls); CSS custom properties (`--bg-panel`, `--text-color`, `--accent`, `--slider-track`, `--tick-color`); CartoDB `dark_all` tile layer swapped on toggle
+
 ### Changed
 - `templates/index.html`: timeline restructured — `#timeline-wrapper` (flex column), `#ticks` (JS-generated markers), `#year-tooltip` (follows slider thumb); calendar legend moved to top-left below zoom controls
-- `static/js/map.js`: `buildTicks()` generates BCE millennium + CE century markers; `updateTooltip()` positions year badge above slider thumb with thumb-width correction; `yearLabel` → `yearTooltip`
+- `static/js/map.js`: `buildTicks()` generates BCE millennium + CE century markers; `updateTooltip()` positions year badge above slider thumb with thumb-width correction; `yearLabel` → `yearTooltip`; tile layer swap on dark mode toggle
 
 ---
 

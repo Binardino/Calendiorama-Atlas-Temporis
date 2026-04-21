@@ -130,10 +130,11 @@ Phases:
   - [x] `nginx/nginx.conf`: reverse proxy + static files
   - [x] `.env.example`: SECRET_KEY, REDIS_URL, FLASK_ENV
   - [x] `.dockerignore`: excludes historical GeoJSON, CShapes, tests, .git from build context
-- [ ] **Phase 7** — UX improvements
+- [x] **Phase 7** — UX improvements
   - [x] `templates/index.html` + `static/js/map.js`: wider timeline bar, century/millennium tick marks, year tooltip on slider thumb
   - [x] Calendar legend moved to top-left (below zoom controls)
-  - [ ] Dark/light mode toggle (top-right button, CSS variables)
+  - [x] Dark/light mode toggle — `#theme-toggle` button (top-left next to zoom), CSS variables (`--bg-panel`, `--accent`, `--tick-color`…), CartoDB dark tile swap on toggle
+  - [x] CSS extracted from inline `<style>` to `static/css/style.css`
 
 ## Historical Data Sources
 

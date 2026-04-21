@@ -1,11 +1,27 @@
 // Initialize Leaflet map centered on the world
 const map = L.map('map').setView([20, 0], 2);
 
-// CartoDB Positron: minimal light-gray basemap designed for data overlays.
-// Much less visual noise than standard OSM tiles → calendar fill colors are clearly visible.
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
-}).addTo(map);
+const TILE_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>';
+const TILE_URLS = {
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    dark:  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+};
+
+let tileLayer = L.tileLayer(TILE_URLS.light, { attribution: TILE_ATTRIBUTION }).addTo(map);
+
+// ---------------------------------------------------------------------------
+// Dark Theme Toggle
+// ---------------------------------------------------------------------------
+
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', function() {
+    const isDark = document.body.dataset.theme === 'dark';
+    document.body.dataset.theme = isDark ? '' : 'dark';
+    themeToggle.textContent = isDark ? '🌙' : '☀️';
+    tileLayer.remove();
+    tileLayer = L.tileLayer(isDark ? TILE_URLS.light : TILE_URLS.dark, { attribution: TILE_ATTRIBUTION }).addTo(map);
+});
+
 
 // ---------------------------------------------------------------------------
 // Calendar panel helpers

@@ -1,11 +1,27 @@
 // Initialize Leaflet map centered on the world
 const map = L.map('map').setView([20, 0], 2);
 
-// CartoDB Positron: minimal light-gray basemap designed for data overlays.
-// Much less visual noise than standard OSM tiles → calendar fill colors are clearly visible.
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
-}).addTo(map);
+const TILE_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>';
+const TILE_URLS = {
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    dark:  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+};
+
+let tileLayer = L.tileLayer(TILE_URLS.light, { attribution: TILE_ATTRIBUTION }).addTo(map);
+
+// ---------------------------------------------------------------------------
+// Dark Theme Toggle
+// ---------------------------------------------------------------------------
+
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', function() {
+    const isDark = document.body.dataset.theme === 'dark';
+    document.body.dataset.theme = isDark ? '' : 'dark';
+    themeToggle.textContent = isDark ? '🌙' : '☀️';
+    tileLayer.remove();
+    tileLayer = L.tileLayer(isDark ? TILE_URLS.light : TILE_URLS.dark, { attribution: TILE_ATTRIBUTION }).addTo(map);
+});
+
 
 // ---------------------------------------------------------------------------
 // Calendar panel helpers
@@ -264,9 +280,12 @@ function formatYear(year) {
 // Slider
 // ---------------------------------------------------------------------------
 
-const slider    = document.getElementById('year-slider');
-const yearLabel = document.getElementById('year-label');
-const dateInput = document.getElementById('date-input');
+const slider      = document.getElementById('year-slider');
+const yearTooltip = document.getElementById('year-tooltip');
+const dateInput   = document.getElementById('date-input');
+
+const SLIDER_MIN = -3000;
+const SLIDER_MAX = 2100;
 
 // Debounce timer handle. Reused on every slider move to avoid firing the API
 // on every pixel of movement — we wait until the user pauses for 300ms.
@@ -282,12 +301,84 @@ function getCurrentMonthDay() {
     return { month: 6, day: 15 };
 }
 
+// ---------------------------------------------------------------------------
+// Tick marks + year tooltip
+// ---------------------------------------------------------------------------
+
+// Move the year tooltip badge above the slider thumb.
+// The thumb doesn't travel the full track width — the browser reserves thumbWidth/2
+// of padding on each side so the thumb center aligns with the track endpoints.
+// Without this correction the badge drifts left at the start and right at the end.
+function updateTooltip(year) {
+    const thumbWidth = 18;  // matches #year-slider::-webkit-slider-thumb width in CSS
+    const percent    = (year - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN);
+    const trackWidth = slider.offsetWidth;
+    const left       = percent * (trackWidth - thumbWidth) + thumbWidth / 2;
+    yearTooltip.style.left    = left + 'px';
+    yearTooltip.textContent   = formatYear(year);
+}
+
+// Generate tick marks inside #ticks once the slider width is known.
+// BCE range is sparse (millennia only); CE range shows a tick every century
+// with a label every 500 years to avoid crowding.
+function buildTicks() {
+    const ticks = document.getElementById('ticks');
+    ticks.innerHTML = '';
+
+    function addTick(year, major) {
+        const percent = (year - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100;
+        const el      = document.createElement('div');
+        el.className  = 'tick';
+        el.style.left = percent + '%';
+        // First tick sits at left:0% — override centering transform so label isn't clipped.
+        if (year === SLIDER_MIN) el.style.transform = 'translateX(0)';
+        if (major) {
+            // Label above + longer line below
+            const label     = document.createElement('span');
+            label.className = 'tick-label';
+            label.textContent = year < 0 ? Math.abs(year) + ' BCE'
+                              : year === 0 ? '0'
+                              : year + ' CE';
+            const line      = document.createElement('div');
+            line.className  = 'tick-line major';
+            el.appendChild(label);
+            el.appendChild(line);
+        } else {
+            const line     = document.createElement('div');
+            line.className = 'tick-line minor';
+            el.appendChild(line);
+        }
+        ticks.appendChild(el);
+    }
+
+    // BCE: label only at millennia — range is too wide for century labels
+    for (let y = SLIDER_MIN; y < 0; y += 1000) addTick(y, true);
+
+    // Year 0: major label
+    addTick(0, true);
+
+    // CE: minor tick every 100 years, major label every 500 years
+    for (let y = 100; y <= 2000; y += 100) {
+        addTick(y, y % 500 === 0);
+    }
+}
+
+// Rebuild ticks when window is resized — offsets are pixel-based.
+window.addEventListener('resize', function() {
+    buildTicks();
+    updateTooltip(parseInt(slider.value, 10));
+});
+
+// ---------------------------------------------------------------------------
+// Slider
+// ---------------------------------------------------------------------------
+
 // Slider moved → sync date input year, keep current month/day, trigger API.
 slider.addEventListener('input', function() {
     const year = parseInt(this.value, 10);
 
-    // Update the label immediately so feedback is instant while dragging.
-    yearLabel.textContent = formatYear(year);
+    // Update tooltip position and text immediately for instant drag feedback.
+    updateTooltip(year);
 
     if (year < 1) {
         // <input type="date"> does not support BCE years.
@@ -332,8 +423,8 @@ dateInput.addEventListener('change', function() {
     const day   = parseInt(parts[2], 10);
 
     // Clamp year to slider range and sync.
-    slider.value          = Math.min(Math.max(year, -3000), 2100);
-    yearLabel.textContent = formatYear(year);
+    slider.value = Math.min(Math.max(year, -3000), 2100);
+    updateTooltip(year);
 
     calendarPanel.style.display = 'none';
     calendarPanel.innerHTML     = '';
@@ -349,6 +440,8 @@ dateInput.addEventListener('change', function() {
 // ---------------------------------------------------------------------------
 
 // Load the snapshot matching the slider's default value on page load.
-// Read month/day from the date input default value ("2010-06-15").
+// buildTicks() and updateTooltip() run after layout so offsetWidth is non-zero.
 const _init = getCurrentMonthDay();
+buildTicks();
+updateTooltip(parseInt(slider.value, 10));
 updateBorders(parseInt(slider.value, 10), _init.month, _init.day);

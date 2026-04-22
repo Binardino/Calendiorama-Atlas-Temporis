@@ -140,6 +140,25 @@ Phases:
   - [x] `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()` — font size scales with zoom, polygon pixel-size filter (threshold 50px), hidden below zoom 3, suppressed for year > 2000, `Aa` toggle button
   - [x] `static/css/style.css`: `.state-label` class + `#state-labels-toggle` button
   - [x] `templates/index.html`: `Aa` toggle button
+- [ ] **Phase 10** — Calendar graceful degradation for BCE dates
+  - [ ] `calendars/base.py`: add `out_of_range: bool = False` to `CalendarDate`
+  - [ ] Each converter: `try/except` + return `CalendarDate(out_of_range=True)` when date is outside valid range
+  - [ ] `api/calendars.py` overlay: exclude `out_of_range` entries from JSON; panel: display "— (before calendar epoch)"
+  - [ ] `tests/calendars/`: add BCE tests for all 8 converters
+- [ ] **Phase 11** — Peters (Gall-Peters) projection toggle
+  - [ ] `proj4` + `proj4leaflet` CDN in `templates/index.html`
+  - [ ] `PETERS_CRS` defined in `static/js/map.js`; `initMap(crs)` factory refactor
+  - [ ] `#projection-toggle` button; toggle handler destroys + recreates map with new CRS
+  - [ ] `static/css/style.css`: `#map { background: #c9e8f0; }` for ocean color without tiles
+- [ ] **Phase 12** — aourednik census + `NAME` → calendar mapping (data phase)
+  - [ ] `scripts/list_aourednik_names.py`: scan all 51 aourednik GeoJSON files, extract unique `NAME` values → `data/calendars/aourednik_names_raw.txt`
+  - [ ] `data/calendars/aourednik_calendar_map.json`: `{ "Roman Empire": ["julian"], "Ottoman Empire": ["hijri", "julian"], ... }` — filled via LLM + human review
+  - [ ] `data/calendars/gregorian_adoption_transitions.json`: per-country adoption dates, previous calendar key, null for non-transitioning regions (Islamic, Persian, Ethiopian, Hebrew)
+- [ ] **Phase 13** — Calendar overlay extension to pre-1886 (depends on Phase 12)
+  - [ ] `calendars/dispatcher.py`: `get_primary_calendar_by_name(entity_name, jdn)` — looks up `aourednik_calendar_map.json` by `NAME`; same return signature as `get_primary_calendar()`
+  - [ ] `calendars/dispatcher.py`: `get_primary_calendar()` consults `gregorian_adoption_transitions.json` — returns `previous_calendar` if `jdn < transition_jdn`
+  - [ ] `api/calendars.py` overlay: for year < 1886, return JSON keyed on `entity_name` instead of `ISO_A2`
+  - [ ] `static/js/map.js`: lift guard from `year <= 2010` to `year <= 1886`; for year < 1886, match overlay via `props.label` instead of `props.ISO_A2`
 
 ## Historical Data Sources
 

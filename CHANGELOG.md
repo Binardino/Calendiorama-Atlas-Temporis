@@ -5,7 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 7: UX Improvements
+## [Unreleased] — Phase 9: Historical State Labels
+
+### Added
+- `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()` — displays entity name (empire/kingdom/state) on each polygon for all time periods
+- `static/css/style.css`: `.state-label` class with white halo, respects dark/light mode via `var(--text-color)`
+
+### Changed
+- `maps/loader.py`: normalized `label` field in all three sources (aourednik `NAME`, CShapes `cntry_name`, Natural Earth `NAME`)
+
+---
+
+## [0.7.0] — Phase 7: UX Improvements
 
 ### Added
 - `static/css/style.css`: all CSS extracted from inline `<style>` in `index.html` → external file served by Nginx cache

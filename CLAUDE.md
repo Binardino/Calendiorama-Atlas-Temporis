@@ -135,6 +135,10 @@ Phases:
   - [x] Calendar legend moved to top-left (below zoom controls)
   - [x] Dark/light mode toggle — `#theme-toggle` button (top-left next to zoom), CSS variables (`--bg-panel`, `--accent`, `--tick-color`…), CartoDB dark tile swap on toggle
   - [x] CSS extracted from inline `<style>` to `static/css/style.css`
+- [ ] **Phase 9** — Historical state labels on map
+  - [ ] `maps/loader.py`: normalize `label` field (aourednik `NAME`, CShapes `cntry_name`, Natural Earth `NAME`)
+  - [ ] `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()`, hidden below zoom 3, zoom handler
+  - [ ] `static/css/style.css`: `.state-label` class
 
 ## Historical Data Sources
 

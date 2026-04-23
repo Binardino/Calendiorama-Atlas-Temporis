@@ -141,8 +141,9 @@ Phases:
   - [x] `static/css/style.css`: `.state-label` class + `#state-labels-toggle` button
   - [x] `templates/index.html`: `Aa` toggle button
 - [ ] **Phase 10** — Calendar graceful degradation for BCE dates
-  - [ ] `calendars/base.py`: add `out_of_range: bool = False` to `CalendarDate`
-  - [ ] Each converter: `try/except` + return `CalendarDate(out_of_range=True)` when date is outside valid range
+  - [x] `calendars/base.py`: add `out_of_range: bool = False` to `CalendarDate`
+  - [x] Each converter: `out_of_range=True` guard — gregorian (JDN 1704987), japanese (1947154), hijri (1948439), persian (2122292), hebrew (1721426), coptic (1825030), ethiopian (1724221); julian has no guard (arithmetic native)
+  - [x] `calendars/README.md`: document JDN concept, all converters, and out_of_range thresholds
   - [ ] `api/calendars.py` overlay: exclude `out_of_range` entries from JSON; panel: display "— (before calendar epoch)"
   - [ ] `tests/calendars/`: add BCE tests for all 8 converters
 - [ ] **Phase 11** — Peters (Gall-Peters) projection toggle

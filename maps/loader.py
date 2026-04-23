@@ -79,7 +79,12 @@ def load_geojson(path: Path) -> gpd.GeoDataFrame:
     full_path = DATA_DIR / path
     if not full_path.exists():
         raise FileNotFoundError(f"File {full_path} does not exist.")
-    return gpd.read_file(full_path)
+    
+    gdf = gpd.read_file(full_path)
+    # Normalise to a consistent 'label' field consumed by JS buildStateLabels().
+    # Both aourednik historical files and Natural Earth use the 'NAME' column.
+    gdf['label'] = gdf['NAME']
+    return gdf
 
 def load_cshapes(target_date: date) -> gpd.GeoDataFrame:
     """
@@ -114,5 +119,6 @@ def load_cshapes(target_date: date) -> gpd.GeoDataFrame:
     # .copy() avoids SettingWithCopyWarning when adding ISO_A2 to the slice
     filtered = cshapes[after_start & before_end].copy()
     filtered['ISO_A2'] = filtered['gwcode'].astype(str).map(_GWCODE_ISO)
+    filtered['label']  = filtered['cntry_name']
 
-    return filtered[['gwcode', 'cntry_name', 'ISO_A2', 'geometry']]
+    return filtered[['gwcode', 'cntry_name', 'label', 'ISO_A2', 'geometry']]

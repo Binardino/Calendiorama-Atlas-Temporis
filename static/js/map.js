@@ -211,7 +211,10 @@ function updateCalendarOverlay(year, month, day) {
 
 // Rebuild labels on zoom so font size stays proportional to the zoom level.
 // overlayData is already in memory — no new fetch needed.
-map.on('zoomend', rebuildLabels);
+map.on('zoomend', function() {
+    rebuildLabels();
+    buildStateLabels();
+});
 
 // ---------------------------------------------------------------------------
 // Borders layer
@@ -229,6 +232,70 @@ const bordersLayer = L.geoJSON(null, {
     // onEachFeature wires up the click → calendar panel for every feature loaded.
     onEachFeature: onEachFeature
 }).addTo(map);
+
+// Separate LayerGroup for state/empire name labels — independent from bordersLayer and labelsLayer.
+const stateLabelsLayer = L.layerGroup().addTo(map);
+
+// Toggled by the Aa button — persists across border reloads and zoom changes.
+let stateLabelsVisible = true;
+
+const stateLabelsToggle = document.getElementById('state-labels-toggle');
+stateLabelsToggle.addEventListener('click', function() {
+    stateLabelsVisible = !stateLabelsVisible;
+    stateLabelsToggle.classList.toggle('toggle-off', !stateLabelsVisible);
+    if (stateLabelsVisible) {
+        buildStateLabels();
+    } else {
+        stateLabelsLayer.clearLayers();
+    }
+});
+
+function buildStateLabels() {
+    stateLabelsLayer.clearLayers();
+    if (!stateLabelsVisible) return;
+    // After 2000 the basemap already shows country names — labels would double the info.
+    if (parseInt(slider.value, 10) > 2000) return;
+    // Below zoom 3 labels overlap at world scale.
+    if (map.getZoom() < 3) return;
+
+    const zoom     = map.getZoom();
+    const fontSize = Math.max(8, Math.round(zoom * 2 + 2)) + 'px';
+
+    bordersLayer.eachLayer(function(layer) {
+        const props = layer.feature && layer.feature.properties;
+        // Use the normalized 'label' field set by loader.py for all three sources.
+        // Props.NAME / LABEL_Y / LABEL_X are Natural Earth-only — absent from aourednik and CShapes.
+        if (!props || !props.label) return;
+
+        // Convert geographic bounds to screen pixels at the current zoom level.
+        // We skip the label when the polygon's largest pixel dimension is below the threshold —
+        // this naturally shows fewer labels at world scale and more as the user zooms in.
+        // Math.max (not min) so elongated states like Chile or Norway also get a label.
+        const bounds      = layer.getBounds();
+        const sw          = map.latLngToContainerPoint(bounds.getSouthWest());
+        const ne          = map.latLngToContainerPoint(bounds.getNorthEast());
+        const pixelWidth  = Math.abs(ne.x - sw.x);
+        const pixelHeight = Math.abs(ne.y - sw.y);
+        if (Math.max(pixelWidth, pixelHeight) < 50) return;
+
+        const center = bounds.getCenter();
+        // iconSize/iconAnchor [0,0]: the Leaflet container has zero size so the anchor
+        // is exactly the geographic center point. The inner .state-label div is then
+        // shifted by translate(-50%,-50%) relative to its own text width/height,
+        // which correctly centers the label around the polygon center.
+        // (Setting className/transform on the outer Leaflet container does not work:
+        //  its computed width is 0, so translateX(-50%) has no effect.)
+        const icon = L.divIcon({
+            className: '',
+            html: '<div class="state-label" style="font-size:' + fontSize + '">' + props.label + '</div>',
+            iconSize:   [0, 0],
+            iconAnchor: [0, 0],
+        });
+
+        L.marker(center, { icon: icon, interactive: false })
+            .addTo(stateLabelsLayer);
+    });
+}
 
 // ---------------------------------------------------------------------------
 // API call
@@ -254,6 +321,9 @@ function updateBorders(year, month, day) {
             // bordersLayer.eachLayer(), so features must exist before it is called.
             const y = year !== undefined ? year : parseInt(slider.value, 10);
             updateCalendarOverlay(y, month, day);
+            // buildStateLabels() runs here — not in a separate .then() — because it reads
+            // bordersLayer directly. Both label systems need borders to be loaded first.
+            buildStateLabels();
         })
         .catch(function(err) {
             console.error('Failed to load borders:', err);

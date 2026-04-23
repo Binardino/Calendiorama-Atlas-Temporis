@@ -5,7 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 7: UX Improvements
+## [Unreleased] — Phase 9: Historical State Labels
+
+### Added
+- `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()` — displays entity name (empire/kingdom/state) centered on each polygon
+  - Font size scales with zoom level (`zoom * 2 + 2`, min 8px)
+  - Polygon pixel-size filter via `latLngToContainerPoint` (threshold 50px largest dimension) — fewer labels at world scale, more as user zooms in
+  - Centering via `iconSize/iconAnchor: [0,0]` + inner div `transform: translate(-50%, -50%)`
+  - Hidden below zoom 3; suppressed for year > 2000 (basemap already labels contemporary states)
+  - `Aa` toggle button (`#state-labels-toggle`) to show/hide labels, persists across year changes
+- `static/css/style.css`: `.state-label` class (white 4-direction halo, `var(--text-color)` for dark/light mode); `#state-labels-toggle` button positioned below theme toggle; `.toggle-off` opacity dimming
+- `templates/index.html`: `Aa` toggle button
+
+### Changed
+- `maps/loader.py`: normalized `label` field in all three sources (aourednik `NAME`, CShapes `cntry_name`, Natural Earth `NAME`); `label` added to `load_cshapes()` return columns
+
+---
+
+## [0.7.0] — Phase 7: UX Improvements
 
 ### Added
 - `static/css/style.css`: all CSS extracted from inline `<style>` in `index.html` → external file served by Nginx cache

@@ -2,9 +2,20 @@ from convertdate import coptic
 from calendars.base import CalendarConverter, CalendarDate
 
 class CopticCalendar(CalendarConverter):
+    # Coptic (Alexandrian) solar calendar, used by the Coptic Orthodox Church.
+    # Year 1 = Era of the Martyrs (Diocletian), starting 284 CE.
+    # 12 months of 30 days + 1 intercalary month (Nasie) of 5 or 6 days.
+    # Currently ~283 years behind Gregorian.
+    # convertdate.coptic uses pure arithmetic — no datetime.date dependency.
+
     def from_jdn(self, jdn: int) -> CalendarDate:
-        # Coptic calendar
-        # coptic lib returns a tuple (year, month, day)
+        # 1825030 ≈ 284 CE (Coptic epoch, Era of the Martyrs).
+        # convertdate.coptic won't crash before this date but returns year <= 0.
+        if jdn < 1825030:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Coptic", formatted="",
+                                out_of_range=True)
+        # coptic.from_jd() returns a tuple (year, month, day)
         year, month, day = coptic.from_jd(jdn)
 
         return CalendarDate(

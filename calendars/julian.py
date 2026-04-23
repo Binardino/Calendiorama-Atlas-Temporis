@@ -2,7 +2,10 @@ from convertdate import julian
 from calendars.base import CalendarConverter, CalendarDate
 
 class JulianCalendar(CalendarConverter):
-    def from_jdn(self, jdn:int) -> CalendarDate:
+    def from_jdn(self, jdn: int) -> CalendarDate:
+        # No out_of_range guard needed: convertdate.julian uses pure arithmetic
+        # and handles BCE dates natively, returning negative years (astronomical notation).
+
         #Julian calendar
         #julian lib returns a tuple (year, month, day)
         year, month, day = julian.from_jd(jdn)

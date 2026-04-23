@@ -50,5 +50,8 @@ conversation.md
 data/raw/
 project_plan_FR.md
 
+# Claude Code — local permissions and session data (machine-specific)
+.claude/
+
 # Logs
 *.log

@@ -3,6 +3,12 @@ from datetime import date
 
 class GregorianCalendar(CalendarConverter):
     def from_jdn(self, jdn: int) -> CalendarDate:
+        # datetime.date crashes for year <= 0; 1704987 ≈ 45 BCE (Julian reform)
+        if jdn < 1704987:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Gregorian", formatted="",
+                                out_of_range=True)
+        
         #Gregorian calendar
         gregorian_date = date.fromordinal(jdn - 1721425)
 

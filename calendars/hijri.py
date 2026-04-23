@@ -21,7 +21,13 @@ class HijriCalendar(CalendarConverter):
     10: "Shawwal", 11: "Dhu al-Qi'dah", 12: "Dhu al-Hijjah",
     }
 
-    def from_jdn(self, jdn:int) -> CalendarDate:
+    def from_jdn(self, jdn: int) -> CalendarDate:
+        # Islamic calendar begins 1 Muharram 1 AH = 622-07-16 CE (JDN ~1948439).
+        if jdn < 1948439:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Islamic", formatted="",
+                                out_of_range=True)
+
         # the function uses 2 different method sequentially
         # according to the two aforementioned calculation systems
         year, month, day = gregorian.from_jd(jdn)

@@ -10,11 +10,18 @@ class HebrewCalendar(CalendarConverter):
     # month_name() is used for formatting 
     # to avoid manual dict that could desync from pyluach numbering.
     
-    def from_jdn(self, jdn:int) -> CalendarDate:
+    def from_jdn(self, jdn: int) -> CalendarDate:
+        # datetime.date.fromordinal() requires ordinal >= 1 (year 1 CE minimum).
+        # The Hebrew calendar extends to 3761 BCE (year 1 Anno Mundi) 
+        # but that range is inaccessible here 
+        # — requires a direct pyluach constructor in a future phase.
+        if jdn < 1721426:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Hebrew", formatted="",
+                                out_of_range=True)
         # JDN → Python date → HebrewDate (pyluach has no direct from_jd).
         # 1721425 = offset between Python ordinal (epoch: Jan 1 year 1 = ordinal 1)
         #           and Julian Day Number  (epoch: Jan 1 4713 BCE = JDN 1)
-
         python_date = date.fromordinal(jdn - 1721425)
         h_date      = dates.HebrewDate.from_pydate(python_date)
 

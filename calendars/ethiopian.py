@@ -1,26 +1,23 @@
 from convertdate import coptic
 from calendars.base import CalendarConverter, CalendarDate
 
-#no specific convertdate Ethiopian converter
-#BUT ethiopian & coptic calendar have same structure & same logic
-
-#Ethiopian year = Coptic year - 276, but earlier I calculated it should be Ethiopian year = Coptic year + 276. Let me reconcile:
-
-##Coptic epoch: 284 CE, so Coptic year 1 = 284 CE
-#Ethiopian epoch: 8 CE, so Ethiopian year 1 = 8 CE
-
-#For a given year CE:
-#Coptic year ≈ CE - 283 (for dates before Sep 11)
-#Ethiopian year ≈ CE - 7 (for dates before Sep 11)
-
 class EthiopianCalendar(CalendarConverter):
+    # Ethiopian (Ge'ez) calendar, official calendar of Ethiopia.
+    # Shares structure with the Coptic calendar (both derived from ancient Egyptian).
+    # Year 1 = 8 CE (Incarnation era, ~7.5 years behind Gregorian).
+    # 13 months: 12 × 30 days + Pagumē (5 or 6 epagomenal days in leap year).
+    # No dedicated convertdate module — computed via coptic.from_jd() + year offset 276.
+    # Relationship: Ethiopian year = Coptic year + 276
+    #   Coptic epoch 284 CE → Ethiopian epoch 8 CE (284 - 276 = 8).
+
     def from_jdn(self, jdn: int) -> CalendarDate:
-        # Ethiopian calendar has about 7.5 years negative difference from Gregorian calendar
-        # based on Coptic calendar, which is itself based on the ancient Egyptian calendar. 
-        # Ethiopian calendar has 13 months : 
-        # 12 months of 30 days each + 5 or 6 epagomenal days in a leap year.
-        
-        # ethiopian lib returns a tuple (year, month, day)
+        # 1724221 ≈ 8 CE (Ethiopian epoch = Coptic epoch − 276 solar years).
+        # convertdate.coptic won't crash before this date but year offset would be nonsensical.
+        if jdn < 1724221:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Ethiopian", formatted="",
+                                out_of_range=True)
+        # coptic.from_jd() returns (year, month, day); Ethiopian year = Coptic year + 276.
         year, month, day = coptic.from_jd(jdn)
 
         return CalendarDate(
@@ -32,7 +29,6 @@ class EthiopianCalendar(CalendarConverter):
         )
 
     def to_jdn(self, cal_date: CalendarDate) -> int:
-        # Implementation of Ethiopian date to JDN conversion
-        return int(coptic.to_jd(cal_date.year - 276, cal_date.month, cal_date.day) + 0.5) 
-        # - 276 for Coptic conversion
-        # + 0.5 due to to JDN returning float .5 for midnight - adding +5 to get int
+        # - 276 to convert Ethiopian year back to Coptic year before calling coptic.to_jd().
+        # + 0.5 because coptic.to_jd() returns a float JDN at noon; cast to midnight int.
+        return int(coptic.to_jd(cal_date.year - 276, cal_date.month, cal_date.day) + 0.5)

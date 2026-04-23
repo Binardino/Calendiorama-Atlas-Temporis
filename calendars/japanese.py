@@ -39,6 +39,12 @@ class JapaneseCalendar(CalendarConverter):
         )
 
     def from_jdn(self, jdn: int) -> CalendarDate:
+        # 1947154 ≈ 645-07-17 CE (first recorded Japanese era, Taika).
+        # Also guards against datetime.date crash on BCE years (year <= 0).
+        if jdn < 1947154:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Japanese", formatted="",
+                                out_of_range=True)
         # 1721425 days is the fixed offset between Python's date ordinal epoch
         # (year 1, Jan 1) and the Julian Day Number epoch (4713 BCE).
         greg_date = date.fromordinal(jdn - 1721425)
@@ -46,8 +52,6 @@ class JapaneseCalendar(CalendarConverter):
         era = self._find_era(greg_date)
 
         if era is None:
-            # Dates before 645 CE or in historical gaps have no era name.
-            # wip how to format pre 645 CE dates
             formatted = greg_date.isoformat()
         else:
             # Era year 1 = the calendar year the era began.

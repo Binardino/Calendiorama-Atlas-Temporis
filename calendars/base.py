@@ -9,6 +9,7 @@ class CalendarDate:
     day           : int
     calendar_name : str
     formatted     : str
+    out_of_range  : bool = False
 
 class CalendarConverter(ABC):
     @abstractmethod

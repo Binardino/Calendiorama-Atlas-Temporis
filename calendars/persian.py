@@ -16,6 +16,12 @@ class PersianCalendar(CalendarConverter):
                     }
     
     def from_jdn(self, jdn: int) -> CalendarDate:
+        # 2122292 ≈ 1079 CE (Jalali calendar reform by Omar Khayyam).
+        if jdn < 2122292:
+            return CalendarDate(year=0, month=0, day=0,
+                                calendar_name="Persian", formatted="",
+                                out_of_range=True)
+
         #persian lib returns a tuple (year, month, day)
         year, month, day = persian.from_jd(jdn)
 

@@ -28,3 +28,15 @@ def test_to_jdn():
     
     #assert
     assert converter.to_jdn(result) == 2451545
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = HebrewCalendar()
+
+    # act
+    # 1721425 = one day before JDN 1721426 (1 Jan 1 CE, Python datetime.date minimum)
+    # The actual Hebrew epoch is 3761 BCE — inaccessible until pyluach direct constructor is used.
+    result = converter.from_jdn(1721425)
+
+    # assert
+    assert result.out_of_range == True

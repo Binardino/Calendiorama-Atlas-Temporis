@@ -26,3 +26,14 @@ def test_to_jdn():
 
     #assert
     assert result == 2451545
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = GregorianCalendar()
+
+    # act
+    # 1704986 = one day before JDN 1704987 (≈ 45 BCE, datetime.date year-0 limit)
+    result = converter.from_jdn(1704986)
+
+    # assert
+    assert result.out_of_range == True

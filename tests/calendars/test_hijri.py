@@ -29,3 +29,14 @@ def test_to_jdn():
     
     #assert
     assert converter.to_jdn(result) == 2451545
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = HijriCalendar()
+
+    # act
+    # 1948438 = one day before the Hijri epoch (622 CE, 1 Muharram 1 AH)
+    result = converter.from_jdn(1948438)
+
+    # assert
+    assert result.out_of_range == True

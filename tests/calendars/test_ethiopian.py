@@ -27,3 +27,15 @@ def test_to_jdn():
     
     # assert
     assert converter.to_jdn(date) == 2451545
+
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = EthiopianCalendar()
+
+    # act
+    # 1724220 = one day before the Ethiopian epoch (≈ 8 CE, Ge'ez Incarnation era)
+    result = converter.from_jdn(1724220)
+
+    # assert
+    assert result.out_of_range == True

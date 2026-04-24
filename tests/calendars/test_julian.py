@@ -1,5 +1,8 @@
 from calendars.julian import JulianCalendar, CalendarDate
 
+# No BCE test: convertdate.julian uses pure arithmetic and handles BCE natively
+# (returns negative years). No out_of_range guard exists in JulianCalendar.
+
 def test_from_jdn():
     #arrange
     converter = JulianCalendar()

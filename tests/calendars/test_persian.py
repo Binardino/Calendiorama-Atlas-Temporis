@@ -28,3 +28,15 @@ def test_to_jdn():
     
     #assert
     assert converter.to_jdn(result) == 2451545
+
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = PersianCalendar()
+
+    # act
+    # 2122291 = one day before the Persian epoch (≈ 1079 CE, Jalali calendar reform by Omar Khayyam)
+    result = converter.from_jdn(2122291)
+
+    # assert
+    assert result.out_of_range == True

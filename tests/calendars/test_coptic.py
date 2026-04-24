@@ -27,3 +27,14 @@ def test_to_jdn():
     
     # assert
     assert converter.to_jdn(date) == 2451545
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = CopticCalendar()
+
+    # act
+    #1825029 = one day before the Coptic epoch (1 Thout 1 AM, 284 CE)
+    result = converter.from_jdn(1825029)
+
+    # assert
+    assert result.out_of_range == True

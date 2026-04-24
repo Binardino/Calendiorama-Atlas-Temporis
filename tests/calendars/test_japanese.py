@@ -19,3 +19,14 @@ def test_to_jdn():
                           calendar_name="Japanese",
                           formatted="平成 12年 1 January")
     assert converter.to_jdn(result) == 2451545
+
+def test_from_jdn_before_epoch():
+    # arrange
+    converter = JapaneseCalendar()
+
+    # act
+    # 1947153 = one day before the Japanese epoch (645 CE, first recorded era Taika)
+    result = converter.from_jdn(1947153)
+
+    # assert
+    assert result.out_of_range == True

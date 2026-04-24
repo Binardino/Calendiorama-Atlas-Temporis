@@ -153,9 +153,13 @@ def get_calendar_overlay_endpoint():
         # 'default' is a fallback key in the map, not a real region — skip it.
         if region_id == 'default':
             continue
+        
         cal_key, calendar = get_primary_calendar(region_id, jdn)
         # cal_key is the internal name ('hijri', 'persian', ...) matching CALENDAR_COLORS in JS.
         # calendar.calendar_name is the display name ('Islamic', 'Persian', ...) — not used here.
+        if calendar.out_of_range:
+            continue
+
         result[region_id] = {
             "primary_calendar": cal_key,
             "formatted": calendar.formatted,

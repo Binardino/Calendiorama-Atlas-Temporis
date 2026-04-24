@@ -6,7 +6,8 @@
         region_name (str)        : display name of the clicked country, e.g. "France"
         date_str    (str)        : ISO date string used for conversion, e.g. "2024-01-01"
         results     (list)       : list of CalendarDate dataclass instances
-                                   each has .calendar_name (str) and .formatted (str)
+                                   each has .calendar_name (str), .formatted (str),
+                                   and .out_of_range (bool) — True if date precedes calendar epoch
 
     results is empty only if the ISO code was not found AND the default fallback failed,
     which should not happen in practice (dispatcher always falls back to ["gregorian"]).
@@ -18,7 +19,7 @@
     <!-- One list item per applicable calendar for this region -->
     <ul>
     {% for r in results %}
-        <li>{{ r.calendar_name }}: {{ r.formatted }}</li>
+        <li>{{ r.calendar_name }}: {% if r.out_of_range %}— (before calendar epoch){% else %}{{ r.formatted }}{% endif %}</li>
     {% endfor %}
     </ul>
 {% else %}

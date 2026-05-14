@@ -135,31 +135,53 @@ Phases:
   - [x] Calendar legend moved to top-left (below zoom controls)
   - [x] Dark/light mode toggle — `#theme-toggle` button (top-left next to zoom), CSS variables (`--bg-panel`, `--accent`, `--tick-color`…), CartoDB dark tile swap on toggle
   - [x] CSS extracted from inline `<style>` to `static/css/style.css`
+- [ ] **Phase 8** — URL state persistence (deep linking)
+  - [ ] `static/js/map.js`: on page load, read `URLSearchParams` — restore year, month, day, lat, lng, zoom if present
+  - [ ] `static/js/map.js`: `pushUrlState(year, month, day)` helper — calls `history.replaceState()` after each `updateBorders()` call
+  - [ ] `static/js/map.js`: include `map.getCenter()` + `map.getZoom()` in URL on `moveend` event
+  - [ ] No backend changes — pure JS URL manipulation
+  - Goal: `?year=814&month=6&day=15&lat=33.3&lng=44.4&zoom=5` opens map at exact state, shareable
+
 - [x] **Phase 9** — Historical state labels on map
   - [x] `maps/loader.py`: normalize `label` field in all three sources (aourednik `NAME`, CShapes `cntry_name`, Natural Earth `NAME`)
   - [x] `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()` — font size scales with zoom, polygon pixel-size filter (threshold 50px), hidden below zoom 3, suppressed for year > 2000, `Aa` toggle button
   - [x] `static/css/style.css`: `.state-label` class + `#state-labels-toggle` button
   - [x] `templates/index.html`: `Aa` toggle button
-- [ ] **Phase 10** — Calendar graceful degradation for BCE dates
+
+- [x] **Phase 10** — Calendar graceful degradation for BCE dates
   - [x] `calendars/base.py`: add `out_of_range: bool = False` to `CalendarDate`
   - [x] Each converter: `out_of_range=True` guard — gregorian (JDN 1704987), japanese (1947154), hijri (1948439), persian (2122292), hebrew (1721426), coptic (1825030), ethiopian (1724221); julian has no guard (arithmetic native)
   - [x] `calendars/README.md`: document JDN concept, all converters, and out_of_range thresholds
-  - [ ] `api/calendars.py` overlay: exclude `out_of_range` entries from JSON; panel: display "— (before calendar epoch)"
-  - [ ] `tests/calendars/`: add BCE tests for all 8 converters
+  - [x] `api/calendars.py` overlay: exclude `out_of_range` entries from JSON; panel: display "— (before calendar epoch)"
+  - [x] `tests/calendars/`: add BCE tests for all 8 converters
+
 - [ ] **Phase 11** — Peters (Gall-Peters) projection toggle
   - [ ] `proj4` + `proj4leaflet` CDN in `templates/index.html`
   - [ ] `PETERS_CRS` defined in `static/js/map.js`; `initMap(crs)` factory refactor
   - [ ] `#projection-toggle` button; toggle handler destroys + recreates map with new CRS
   - [ ] `static/css/style.css`: `#map { background: #c9e8f0; }` for ocean color without tiles
+
 - [ ] **Phase 12** — aourednik census + `NAME` → calendar mapping (data phase)
   - [ ] `scripts/list_aourednik_names.py`: scan all 51 aourednik GeoJSON files, extract unique `NAME` values → `data/calendars/aourednik_names_raw.txt`
   - [ ] `data/calendars/aourednik_calendar_map.json`: `{ "Roman Empire": ["julian"], "Ottoman Empire": ["hijri", "julian"], ... }` — filled via LLM + human review
   - [ ] `data/calendars/gregorian_adoption_transitions.json`: per-country adoption dates, previous calendar key, null for non-transitioning regions (Islamic, Persian, Ethiopian, Hebrew)
+
 - [ ] **Phase 13** — Calendar overlay extension to pre-1886 (depends on Phase 12)
   - [ ] `calendars/dispatcher.py`: `get_primary_calendar_by_name(entity_name, jdn)` — looks up `aourednik_calendar_map.json` by `NAME`; same return signature as `get_primary_calendar()`
   - [ ] `calendars/dispatcher.py`: `get_primary_calendar()` consults `gregorian_adoption_transitions.json` — returns `previous_calendar` if `jdn < transition_jdn`
   - [ ] `api/calendars.py` overlay: for year < 1886, return JSON keyed on `entity_name` instead of `ISO_A2`
   - [ ] `static/js/map.js`: lift guard from `year <= 2010` to `year <= 1886`; for year < 1886, match overlay via `props.label` instead of `props.ISO_A2`
+
+- [ ] **Phase 14** — Global Search & Geocoding
+  - [ ] Add search bar (Leaflet.Control.Search or custom) to find countries/cities.
+  - [ ] Integration with a geocoding API (Nominatim) or local index of historical names.
+  - [ ] Update map state and calendar panel on search result selection.
+
+- [ ] **Phase 15** — Time-Lapse & Animations
+  - [ ] Add "Play" button to automatically increment year.
+  - [ ] Client-side interpolation (if possible) or smooth transitions between border snapshots.
+  - [ ] Exportable GIFs/Videos of border changes over a selected period.
+
 
 ## Historical Data Sources
 

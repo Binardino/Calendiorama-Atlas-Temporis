@@ -62,6 +62,8 @@ def find_nearest_year(year: int, available: list[int]) -> int:
     Returns:
         The closest available snapshot year that does not exceed `year`.
     """
+    if not available:
+        raise FileNotFoundError("No historical GeoJSON snapshots found in data/geojson/historical/")
     candidates = [y for y in available if y <= year]
     return max(candidates) if candidates else available[0]
 
@@ -102,7 +104,11 @@ def load_cshapes(target_date: date) -> gpd.GeoDataFrame:
     Returns:
         GeoDataFrame with columns: gwcode, cntry_name, ISO_A2, geometry.
     """
-    cshapes = gpd.read_file(DATA_DIR / "cshapes" / "shapefile")
+    cshapes_dir = DATA_DIR / "cshapes"
+    shp_files = list(cshapes_dir.glob("*.shp"))
+    if not shp_files:
+        raise FileNotFoundError(f"No shapefile found in {cshapes_dir}")
+    cshapes = gpd.read_file(shp_files[0])
 
     year, month, day = target_date.year, target_date.month, target_date.day
 

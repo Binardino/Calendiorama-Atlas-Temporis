@@ -5,7 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — Phase 9: Historical State Labels
+## [Unreleased]
+
+### Fixed
+- `maps/loader.py`: `load_cshapes()` — auto-discovers `.shp` file via `glob("*.shp")` instead of hardcoded `"shapefile"` path; works regardless of upstream filename (e.g. `CShapes-2.0.shp`)
+- `maps/loader.py`: `find_nearest_year()` — raises `FileNotFoundError` with explicit message when `available` list is empty, instead of `IndexError: list index out of range`
+
+---
+
+## [0.10.0] — Phase 10: Calendar BCE Graceful Degradation
+
+### Added
+- `calendars/base.py`: `out_of_range: bool = False` field in `CalendarDate` dataclass
+- Each converter: `out_of_range=True` guard at converter-specific JDN threshold — gregorian (1704987), japanese (1947154), hijri (1948439), persian (2122292), hebrew (1721426), coptic (1825030), ethiopian (1724221); julian arithmetic is unbounded
+- `calendars/README.md`: full documentation of JDN concept, all 8 converters, and `out_of_range` thresholds
+- `tests/calendars/`: `test_from_jdn_before_epoch` test for all 8 converters
+
+### Changed
+- `api/calendars.py`: overlay endpoint skips `out_of_range` entries (no label rendered for BCE dates outside a calendar's epoch)
+- `templates/partials/calendar_panel.html`: displays "— (before calendar epoch)" for `out_of_range` results instead of crashing
+
+---
+
+## [0.9.0] — Phase 9: Historical State Labels
 
 ### Added
 - `static/js/map.js`: `stateLabelsLayer` + `buildStateLabels()` — displays entity name (empire/kingdom/state) centered on each polygon

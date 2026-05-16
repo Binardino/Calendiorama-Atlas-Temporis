@@ -1,0 +1,50 @@
+{
+  "RU": {
+    "gregorian_from": "1918-02-14",
+    "note": "Adopted by the RSFSR; the Julian calendar is still used by the Russian Orthodox Church."
+  },
+  "BG": {
+    "gregorian_from": "1916-04-14",
+    "note": "Adopted during World War I."
+  },
+  "RO": {
+    "gregorian_from": "1919-04-14",
+    "note": "Adopted after the formation of Greater Romania."
+  },
+  "GR": {
+    "gregorian_from": "1923-03-01",
+    "note": "Adopted for civil purposes; the 'Revised Julian' calendar was adopted by the Church later in 1924."
+  },
+  "TR": {
+    "gregorian_from": "1926-01-01",
+    "note": "Adopted as part of Atatürk's Westernizing reforms, replacing the Rumi calendar."
+  },
+  "CN": {
+    "gregorian_from": "1912-01-01",
+    "note": "Officially adopted following the Xinhai Revolution, though lunisolar practice continued."
+  },
+  "EG": {
+    "gregorian_from": "1875-01-01",
+    "note": "Adopted for civil and government use by Khedive Ismail."
+  },
+  "RS": {
+    "gregorian_from": "1919-01-28",
+    "note": "Adopted by the Kingdom of Serbs, Croats and Slovenes (Yugoslavia)."
+  },
+  "EE": {
+    "gregorian_from": "1918-02-14",
+    "note": "Transitioned alongside Russia during the independence period."
+  },
+  "LV": {
+    "gregorian_from": "1918-02-15",
+    "note": "Adopted during the German occupation/independence struggle."
+  },
+  "LT": {
+    "gregorian_from": "1918-02-15",
+    "note": "Adopted during the German occupation/independence struggle."
+  },
+  "AL": {
+    "gregorian_from": "1912-11-28",
+    "note": "Adopted upon declaration of independence from the Ottoman Empire."
+  }
+}

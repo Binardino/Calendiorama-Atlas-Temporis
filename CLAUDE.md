@@ -161,16 +161,17 @@ Phases:
   - [ ] `#projection-toggle` button; toggle handler destroys + recreates map with new CRS
   - [ ] `static/css/style.css`: `#map { background: #c9e8f0; }` for ocean color without tiles
 
-- [ ] **Phase 12** — aourednik census + `NAME` → calendar mapping (data phase)
-  - [ ] `scripts/list_aourednik_names.py`: scan all 51 aourednik GeoJSON files, extract unique `NAME` values → `data/calendars/aourednik_names_raw.txt`
-  - [ ] `data/calendars/aourednik_calendar_map.json`: `{ "Roman Empire": ["julian"], "Ottoman Empire": ["hijri", "julian"], ... }` — filled via LLM + human review
-  - [ ] `data/calendars/gregorian_adoption_transitions.json`: per-country adoption dates, previous calendar key, null for non-transitioning regions (Islamic, Persian, Ethiopian, Hebrew)
+- [ ] **Phase 12** — Collecte des données de calendrier (données, deux datasets)
+  - [x] `scripts/list_aourednik_names.py`: scan 52 fichiers aourednik → `data/calendars/aourednik_names_raw.txt` (3027 NAMEs uniques)
+  - **Dataset A** — `data/calendars/gregorian_adoption_dates.json` : pour les pays CShapes/NaturalEarth (ISO codes) qui étaient encore sur le calendrier Julien en 1886, la date exacte de bascule vers le Grégorien. Format : `{"RU": {"gregorian_from": "1918-02-14", "note": "..."}, ...}`. Périmètre : pays de tradition orthodoxe/byzantine + Chine, Turquie, Égypte. Collecté via Gemini + vérification humaine.
+  - **Dataset B** — `data/calendars/aourednik_calendar_map.json` : pour les ~200–400 entités historiquement pertinentes dans les 3027 NAMEs aourednik (empires, royaumes, califats — exclure cultures archéologiques et groupes autochtones sans calendrier documenté). Format : `{"Roman Empire": "julian", "Ottoman Empire": "hijri", ...}`. Collecté via Gemini sur la base de `aourednik_names_raw.txt`.
 
-- [ ] **Phase 13** — Calendar overlay extension to pre-1886 (depends on Phase 12)
-  - [ ] `calendars/dispatcher.py`: `get_primary_calendar_by_name(entity_name, jdn)` — looks up `aourednik_calendar_map.json` by `NAME`; same return signature as `get_primary_calendar()`
-  - [ ] `calendars/dispatcher.py`: `get_primary_calendar()` consults `gregorian_adoption_transitions.json` — returns `previous_calendar` if `jdn < transition_jdn`
-  - [ ] `api/calendars.py` overlay: for year < 1886, return JSON keyed on `entity_name` instead of `ISO_A2`
-  - [ ] `static/js/map.js`: lift guard from `year <= 2010` to `year <= 1886`; for year < 1886, match overlay via `props.label` instead of `props.ISO_A2`
+- [ ] **Phase 13** — Extension de l'overlay calendrier (dépend de Phase 12)
+  - [ ] **Étape A** — `calendars/dispatcher.py` : chargement de `gregorian_adoption_dates.json` au niveau module ; fonction `_apply_transitions(names, region_id, jdn)` qui remplace `"gregorian"` par `"julian"` si `jdn < adoption_jdn` ; appel dans `get_calendars()` et `get_primary_calendar()`
+  - [ ] **Étape B** — `calendars/dispatcher.py` : chargement de `aourednik_calendar_map.json` au niveau module ; nouvelle fonction `get_primary_calendar_by_name(entity_name, jdn)` — lookup par NAME, fallback `"gregorian"`; même signature de retour que `get_primary_calendar()`
+  - [ ] **Étape C** — `api/calendars.py` overlay : pour `year >= 1886`, logique existante (ISO codes) avec dispatcher JDN-aware ; pour `year < 1886`, itérer sur `_aourednik_map` et retourner JSON keyed par `entity_name`
+  - [ ] **Étape D** — `static/js/map.js` : lever la garde `year > 2010` → `year > 1886` ; pour `year <= 1886`, appeler `updateCalendarOverlayByName()` qui matche sur `props.label` (NAME) au lieu de `props.ISO_A2`
+  - Vérification : Russie 1900-01-01 → julien ; Russie 1920-01-01 → grégorien ; "Roman Empire" an 300 → julien ; "Ottoman Empire" 1500 → hijri
 
 - [ ] **Phase 14** — Global Search & Geocoding
   - [ ] Add search bar (Leaflet.Control.Search or custom) to find countries/cities.
